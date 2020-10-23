@@ -76,7 +76,7 @@ export async function formMultipart(req, res, { user, bucketName, originalFileNa
 
   const busboy = new BusBoyConstructor({
     headers: req.headers,
-    highWaterMark: HIGH_WATER_MARK * 5,
+    highWaterMark: HIGH_WATER_MARK,
   });
 
   const _createStreamAndUploadToTextile = async (writableStream) => {
@@ -187,7 +187,7 @@ export async function formMultipart(req, res, { user, bucketName, originalFileNa
       });
 
       Logs.task("req.pipe(writableStream)", WORKER_NAME);
-      req.pipe(new Throttle({ bytes: HIGH_WATER_MARK, interval: 400 })).pipe(writableStream);
+      req.pipe(writableStream);
     });
   };
 
