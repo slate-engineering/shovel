@@ -5,6 +5,7 @@ import * as Strings from "~/common/strings";
 import * as Logs from "~/node_common/script-logging";
 import * as NodeConstants from "~/node_common/constants";
 
+import Throttle from "~/node_common/vendor/throttle";
 import AbortController from "abort-controller";
 import BusBoyConstructor from "busboy";
 import Queue from "p-queue";
@@ -137,7 +138,7 @@ export async function formMultipart(req, res, { user, bucketName, originalFileNa
                 root: bucketRoot,
                 signal,
                 progress: function(num) {
-                  if (num % (HIGH_WATER_MARK * 10) !== 0) {
+                  if (num % (HIGH_WATER_MARK * 5) !== 0) {
                     return;
                   }
 
@@ -186,7 +187,7 @@ export async function formMultipart(req, res, { user, bucketName, originalFileNa
       });
 
       Logs.task("req.pipe(writableStream)", WORKER_NAME);
-      req.pipe(writableStream);
+      req.pipe(new Throttle({ bytes: HIGH_WATER_MARK, interval: 400 })).pipe(writableStream);
     });
   };
 

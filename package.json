@@ -8,8 +8,8 @@
     "node": "14.7.0"
   },
   "scripts": {
-    "dev": "node .",
-    "start": "NODE_ENV=production node .",
+    "dev": "NODE_TLS_REJECT_UNAUTHORIZED=0 node . --max-old-space-size=8192",
+    "start": "NODE_TLS_REJECT_UNAUTHORIZED=0 NODE_ENV=production node . --max-old-space-size=8192",
     "scripts": "NODE_TLS_REJECT_UNAUTHORIZED=0 node --max-old-space-size=8192 ./scripts"
   },
   "repository": "slate-engineering/shovel",
