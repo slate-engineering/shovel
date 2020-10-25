@@ -16,6 +16,4 @@ export const POSTGRES_DATABASE = process.env.POSTGRES_DATABASE;
 export const JWT_SECRET = process.env.JWT_SECRET;
 export const TEXTILE_HUB_KEY = process.env.TEXTILE_HUB_KEY;
 export const TEXTILE_HUB_SECRET = process.env.TEXTILE_HUB_SECRET;
-export const SOCIAL_SLACK_WEBHOOK_KEY = process.env.SOCIAL_SLACK_WEBHOOK_KEY;
-export const SUPPORT_SLACK_WEBHOOK_KEY = process.env.SUPPORT_SLACK_WEBHOOK_KEY;
 export const TEXTILE_SLACK_WEBHOOK_KEY = process.env.TEXTILE_SLACK_WEBHOOK_KEY;

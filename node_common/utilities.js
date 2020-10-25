@@ -4,7 +4,6 @@ import * as Constants from "~/node_common/constants";
 import * as Social from "~/node_common/social";
 
 import JWT from "jsonwebtoken";
-import BCrypt from "bcrypt";
 
 import { Buckets, PrivateKey, Pow, Client, ThreadID } from "@textile/hub";
 
@@ -13,39 +12,6 @@ const BUCKET_NAME = "data";
 const TEXTILE_KEY_INFO = {
   key: Environment.TEXTILE_HUB_KEY,
   secret: Environment.TEXTILE_HUB_SECRET,
-};
-
-export const checkTextile = async () => {
-  try {
-    const response = await fetch("https://slate.textile.io/health", {
-      headers: {
-        Accept: "application/json",
-        "Content-Type": "application/json",
-      },
-    });
-
-    if (response.status === 204) {
-      return true;
-    }
-
-    Social.sendTextileSlackMessage({
-      file: "/node_common/utilities.js",
-      user: { username: "UNDEFINED" },
-      message: "https://slate.textile.io/health is down",
-      code: "N/A",
-      functionName: `checkTextile`,
-    });
-  } catch (e) {
-    Social.sendTextileSlackMessage({
-      file: "/node_common/utilities.js",
-      user: { username: "UNDEFINED" },
-      message: e.message,
-      code: e.code,
-      functionName: `checkTextile`,
-    });
-  }
-
-  return false;
 };
 
 export const decodeCookieToken = (token) => {
@@ -88,49 +54,6 @@ export const parseAuthHeader = (value) => {
 
   var matches = value.match(/(\S+)\s+(\S+)/);
   return matches && { scheme: matches[1], value: matches[2] };
-};
-
-// NOTE(jim): Requires @textile/hub
-export const getPowergateAPIFromUserToken = async ({ user }) => {
-  const token = user.data.tokens.api;
-  const identity = await PrivateKey.fromString(token);
-  const power = await Pow.withKeyInfo(TEXTILE_KEY_INFO);
-  await power.getToken(identity);
-
-  // TODO(jim): Put this call into a file for all Textile related calls.
-  let info = {};
-  try {
-    const powerInfoResponse = await power.info();
-    info = powerInfoResponse.info;
-  } catch (e) {
-    Social.sendTextileSlackMessage({
-      file: "/node_common/utilities.js",
-      user,
-      message: e.message,
-      code: e.code,
-      functionName: `power.info`,
-    });
-  }
-
-  // TODO(jim): Put this call into a file for all Textile related calls.
-  let health = {};
-  try {
-    health = await power.health();
-  } catch (e) {
-    Social.sendTextileSlackMessage({
-      file: "/node_common/utilities.js",
-      user,
-      message: e.message,
-      code: e.code,
-      functionName: `power.health`,
-    });
-  }
-
-  return {
-    power,
-    powerHealth: health,
-    powerInfo: info,
-  };
 };
 
 export const setupWithThread = async ({ buckets }) => {
@@ -242,12 +165,5 @@ export const createFolder = ({ id, name }) => {
     date: null,
     size: null,
     children: [],
-  };
-};
-
-export const updateStateData = async (state, newState) => {
-  return {
-    ...state,
-    ...newState,
   };
 };

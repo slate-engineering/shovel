@@ -246,7 +246,5 @@ export async function formMultipart(req, res, { user, bucketName, originalFileNa
   }
 
   Logs.task(`SUCCESS !!!`, WORKER_NAME);
-
-  console.log(`\n\n\n`);
   return { decorator: "UPLOAD_SUCCESS", data, ipfs: response.data };
 }
