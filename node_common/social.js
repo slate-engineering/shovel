@@ -1,4 +1,5 @@
 import * as Environment from "~/node_common/environment";
+import * as ScriptLogging from "~/node_common/script-logging";
 import * as Strings from "~/common/strings";
 
 import { IncomingWebhook } from "@slack/webhook";
@@ -29,6 +30,6 @@ export const sendTextileSlackMessage = ({
       text: `*Source code —* ${slackFileURL} \n*Source client —* ${source} \n*Callsite —* \`${functionName}\`\n*User —* ${userURL}\n\n> ${message}\n\n*Textile error code —* ${code}`,
     });
   } catch (e) {
-    console.log({ decorator: "SLACK_MESSAGE_FAILURE", message });
+    ScriptLogging.error("SHOVEL          ", e.message);
   }
 };

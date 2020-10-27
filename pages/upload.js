@@ -2,7 +2,11 @@ import * as Upload from "~/node_common/upload";
 import * as Utilities from "~/node_common/utilities";
 import * as Data from "~/node_common/data";
 import * as LibraryManager from "~/node_common/managers/library";
+import * as ScriptLogging from "~/node_common/script-logging";
+
 import * as Strings from "~/common/strings";
+
+const SHOVEL = "SHOVEL          ";
 
 export default async (req, res, options) => {
   if (Strings.isEmpty(req.params.upload)) {
@@ -44,8 +48,7 @@ export default async (req, res, options) => {
       bucketName: options ? options.bucketName : null,
     });
   } catch (e) {
-    console.log("exiting !!!");
-    console.log(e);
+    ScriptLogging.error(SHOVEL, e.message);
   }
 
   if (!response) {

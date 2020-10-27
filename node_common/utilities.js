@@ -1,13 +1,16 @@
 import * as Environment from "~/node_common/environment";
-import * as Strings from "~/common/strings";
 import * as Constants from "~/node_common/constants";
 import * as Social from "~/node_common/social";
+import * as ScriptLogging from "~/node_common/script-logging";
+import * as Strings from "~/common/strings";
 
 import JWT from "jsonwebtoken";
 
 import { Buckets, PrivateKey, Pow, Client, ThreadID } from "@textile/hub";
 
 const BUCKET_NAME = "data";
+
+const INIT = "INIT BUCKETS    ";
 
 const TEXTILE_KEY_INFO = {
   key: Environment.TEXTILE_HUB_KEY,
@@ -19,32 +22,9 @@ export const decodeCookieToken = (token) => {
     const decoded = JWT.verify(token, Environment.JWT_SECRET);
     return decoded.id;
   } catch (e) {
-    console.log(e.message);
+    ScriptLogging.error("SHOVEL          ", e.message);
     return null;
   }
-};
-
-export const getIdFromCookie = (req) => {
-  let id = null;
-  if (Strings.isEmpty(req.headers.cookie)) {
-    return id;
-  }
-
-  const token = req.headers.cookie.replace(
-    /(?:(?:^|.*;\s*)WEB_SERVICE_SESSION_KEY\s*\=\s*([^;]*).*$)|^.*$/,
-    "$1"
-  );
-
-  if (!Strings.isEmpty(token)) {
-    try {
-      const decoded = JWT.verify(token, Environment.JWT_SECRET);
-      id = decoded.id;
-    } catch (e) {
-      console.log(e.message);
-    }
-  }
-
-  return id;
 };
 
 export const parseAuthHeader = (value) => {
@@ -87,7 +67,6 @@ export const addExistingCIDToData = async ({ buckets, key, path, cid }) => {
   }
 };
 
-// NOTE(jim): Requires @textile/hub
 export const getBucketAPIFromUserToken = async ({ user, bucketName, encrypted = false }) => {
   const token = user.data.tokens.api;
   const name = Strings.isEmpty(bucketName) ? BUCKET_NAME : bucketName;
@@ -98,26 +77,26 @@ export const getBucketAPIFromUserToken = async ({ user, bucketName, encrypted = 
 
   let root = null;
 
-  console.log(`[ buckets ] getOrCreate init ${name}`);
+  ScriptLogging.message(INIT, `getOrCreate init ${name}`);
 
   // NOTE(jim): captures `withThread` cases.
   try {
     buckets = await setupWithThread({ buckets });
   } catch (e) {
-    console.log(`[ textile ] warning: ${e.message}`);
+    ScriptLogging.error(INIT, `warning: ${e.message}`);
   }
 
-  console.log(`[ buckets ] getOrCreate thread found for ${name}`);
+  ScriptLogging.message(INIT, `getOrCreate thread found for ${name}`);
 
   // NOTE(jim): captures finding your bucket and or creating a new one.
   try {
     const roots = await buckets.list();
     root = roots.find((bucket) => bucket.name === name);
     if (!root) {
-      console.log(`[ buckets ] creating new bucket ${name}`);
+      ScriptLogging.message(INIT, `creating new bucket ${name}`);
 
       if (encrypted) {
-        console.log("[ buckets ] this bucket will be encrypted");
+        ScriptLogging.message(INIT, `this bucket will be encrypted`);
       }
 
       const created = await buckets.create(name, encrypted);
@@ -135,35 +114,12 @@ export const getBucketAPIFromUserToken = async ({ user, bucketName, encrypted = 
     return { buckets: null, bucketKey: null, bucketRoot: null };
   }
 
-  console.log(`[ buckets ] getOrCreate success for ${name}`);
+  ScriptLogging.message(INIT, `getOrCreate success for ${name}`);
 
   return {
     buckets,
     bucketKey: root.key,
     bucketRoot: root,
     bucketName: name,
-  };
-};
-
-export const getFileName = (s) => {
-  let target = s;
-  if (target.endsWith("/")) {
-    target = target.substring(0, target.length - 1);
-  }
-
-  return target.substr(target.lastIndexOf("/") + 1);
-};
-
-export const createFolder = ({ id, name }) => {
-  return {
-    decorator: "FOLDER",
-    id,
-    folderId: id,
-    icon: "FOLDER",
-    name: name ? name : getFileName(id),
-    pageTitle: `Exploring ${getFileName(id)}`,
-    date: null,
-    size: null,
-    children: [],
   };
 };

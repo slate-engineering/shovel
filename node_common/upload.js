@@ -1,21 +1,20 @@
 import * as LibraryManager from "~/node_common/managers/library";
 import * as Utilities from "~/node_common/utilities";
 import * as Social from "~/node_common/social";
-import * as Strings from "~/common/strings";
-import * as Logs from "~/node_common/script-logging";
 import * as NodeConstants from "~/node_common/constants";
+import * as ScriptLogging from "~/node_common/script-logging";
+import * as Strings from "~/common/strings";
 
-import Throttle from "~/node_common/vendor/throttle";
 import AbortController from "abort-controller";
 import BusBoyConstructor from "busboy";
 import Queue from "p-queue";
 
-const WORKER_NAME = "BROWSER->RENDER->TEXTILE";
+const UPLOAD = "UPLOADING       ";
+const SHOVEL = "RENDER->TEXTILE ";
+const POST = "POST PROCESS    ";
 const HIGH_WATER_MARK = 1024 * 1024 * 3;
 
 export async function formMultipart(req, res, { user, bucketName, originalFileName }) {
-  console.log("\n\n\n");
-
   const singleConcurrencyQueue = new Queue({ concurrency: 1 });
   const controller = new AbortController();
   const heapSize = Strings.bytesToSize(process.memoryUsage().heapUsed);
@@ -27,11 +26,13 @@ export async function formMultipart(req, res, { user, bucketName, originalFileNa
   let data = null;
   let dataPath = null;
 
-  Logs.taskTimeless(`${user.username} is pushing ${originalFileName}`, WORKER_NAME);
-  Logs.note(`heap size : ${heapSize}`);
-  Logs.note(`upload size  : ${Strings.bytesToSize(uploadSizeBytes)}`);
+  ScriptLogging.log(UPLOAD, `${user.username} is pushing ${originalFileName}`);
+  ScriptLogging.message(UPLOAD, `heap size : ${heapSize}`);
+  ScriptLogging.message(UPLOAD, `upload size : ${Strings.bytesToSize(uploadSizeBytes)}`);
 
   if (uploadSizeBytes > NodeConstants.TEXTILE_BUCKET_LIMIT) {
+    ScriptLogging.error(SHOVEL, `Too large !!!`);
+    res.set("Connection", "close");
     return {
       decorator: "UPLOAD_SIZE_TOO_LARGE",
       error: true,
@@ -44,7 +45,8 @@ export async function formMultipart(req, res, { user, bucketName, originalFileNa
   });
 
   if (!buckets) {
-    Logs.error("Utilities.getBucketAPIFromUserToken()");
+    ScriptLogging.error(SHOVEL, `Utilities.getBucketAPIFromUserToken()`);
+    res.set("Connection", "close");
     return {
       decorator: "UPLOAD_NO_BUCKETS",
       error: true,
@@ -57,6 +59,7 @@ export async function formMultipart(req, res, { user, bucketName, originalFileNa
     const path = await buckets.listPath(bucketKey, "/");
     bucketSizeBytes = path.item.size;
   } catch (e) {
+    res.set("Connection", "close");
     return {
       decorator: "UPLOAD_BUCKET_CHECK_FAILED",
       error: true,
@@ -64,10 +67,11 @@ export async function formMultipart(req, res, { user, bucketName, originalFileNa
   }
 
   let remainingSizeBytes = NodeConstants.TEXTILE_BUCKET_LIMIT - bucketSizeBytes;
-  Logs.note(`bucket size bytes : ${bucketSizeBytes}`);
-  Logs.note(`remaining size bytes : ${remainingSizeBytes}`);
+  ScriptLogging.message(UPLOAD, `bucket size bytes : ${bucketSizeBytes}`);
+  ScriptLogging.message(UPLOAD, `remaining size bytes : ${remainingSizeBytes}`);
 
   if (uploadSizeBytes > remainingSizeBytes) {
+    res.set("Connection", "close");
     return {
       decorator: "UPLOAD_NOT_ENOUGH_SPACE_REMAINS",
       error: true,
@@ -86,13 +90,13 @@ export async function formMultipart(req, res, { user, bucketName, originalFileNa
           try {
             await actionFn();
           } catch (e) {
-            Logs.error(`${timeoutId} : queue.pause()`);
+            ScriptLogging.error(SHOVEL, `${timeoutId} : queue.pause()`);
             singleConcurrencyQueue.pause();
 
-            Logs.error(`${timeoutId} : controller.abort()`);
+            ScriptLogging.error(SHOVEL, `${timeoutId} : controller.abort()`);
             controller.abort();
 
-            Logs.error(`${timeoutId} : sendTextileSlackMessage()`);
+            ScriptLogging.error(SHOVEL, `${timeoutId} : sendTextileSlackMessage()`);
             Social.sendTextileSlackMessage({
               file: "/node_common/upload.js",
               user,
@@ -101,10 +105,13 @@ export async function formMultipart(req, res, { user, bucketName, originalFileNa
               functionName: `${timeoutId} : _safeForcedSingleConcurrencyFn()`,
             });
 
-            Logs.error(`${timeoutId} : req.unpipe()`);
+            ScriptLogging.error(SHOVEL, `${timeoutId} : req.unpipe()`);
             req.unpipe();
 
-            Logs.error(`${timeoutId} : rejectFn() of safeForcedSingleConcurrencyFn()`);
+            ScriptLogging.error(
+              SHOVEL,
+              `${timeoutId} : rejectFn() of safeForcedSingleConcurrencyFn()`
+            );
 
             return rejectFn({
               decorator: "UPLOAD_FAILURE",
@@ -116,13 +123,6 @@ export async function formMultipart(req, res, { user, bucketName, originalFileNa
         });
       }
 
-      // NOTE(jim)
-      //
-      // stream    - ReadableStream constructor
-      // mime      - */* file type
-      // filename  - filename reference for extension later.
-      //
-      //
       writableStream.on("file", function(fieldname, stream, filename, encoding, mime) {
         const timeoutId = `${user.username}-${filename}`;
 
@@ -142,7 +142,7 @@ export async function formMultipart(req, res, { user, bucketName, originalFileNa
                     return;
                   }
 
-                  Logs.note(`${timeoutId} : ${Strings.bytesToSize(num)}`);
+                  ScriptLogging.progress(SHOVEL, `${timeoutId} : ${Strings.bytesToSize(num)}`);
                 },
               })
               .catch(function(e) {
@@ -152,7 +152,7 @@ export async function formMultipart(req, res, { user, bucketName, originalFileNa
             dataPath = push.path.path;
 
             req.unpipe();
-            Logs.task(`${timeoutId} : req.unpipe()`, WORKER_NAME);
+            ScriptLogging.message(SHOVEL, `${timeoutId} : req.unpipe()`);
           },
           rejectPromiseFn,
           timeoutId
@@ -161,7 +161,7 @@ export async function formMultipart(req, res, { user, bucketName, originalFileNa
 
       writableStream.on("finish", function() {
         return _safeForcedSingleConcurrencyFn(() => {
-          Logs.task("busboy finished");
+          ScriptLogging.message(SHOVEL, `upload finished ...`);
 
           if (Strings.isEmpty(dataPath)) {
             return rejectPromiseFn({
@@ -171,7 +171,7 @@ export async function formMultipart(req, res, { user, bucketName, originalFileNa
             });
           }
 
-          Logs.task(dataPath, WORKER_NAME);
+          ScriptLogging.message(SHOVEL, `uploaded data path : ${dataPath}`);
 
           return resolvePromiseFn({
             decorator: "UPLOAD_STREAM_SUCCESS",
@@ -186,7 +186,7 @@ export async function formMultipart(req, res, { user, bucketName, originalFileNa
         }, rejectPromiseFn);
       });
 
-      Logs.task("req.pipe(writableStream)", WORKER_NAME);
+      ScriptLogging.message(SHOVEL, `req.pipe(writableStream)`);
       req.pipe(writableStream);
     });
   };
@@ -195,29 +195,27 @@ export async function formMultipart(req, res, { user, bucketName, originalFileNa
   try {
     response = await _createStreamAndUploadToTextile(busboy);
   } catch (e) {
-    Logs.error(e.message);
+    ScriptLogging.error(SHOVEL, e.message);
     res.set("Connection", "close");
 
     return response;
   }
 
-  Logs.task("response", WORKER_NAME);
-  console.log(response);
-
+  ScriptLogging.message(SHOVEL, `stream complete ...`);
   if (response && response.error) {
     res.set("Connection", "close");
 
     return response;
   }
 
-  Logs.note("non-essential Utilities.getBucketAPIFromuserToken()");
+  ScriptLogging.message(POST, `non-essential Utilities.getBucketAPIFromuserToken()`);
   let refreshed = await Utilities.getBucketAPIFromUserToken({
     user,
     bucketName,
   });
 
   if (!refreshed.buckets) {
-    Logs.error("Utilities.getBucketAPIFromuserToken() failed");
+    ScriptLogging.error(POST, `Utilities.getBucketAPIFromuserToken() failed`);
     return {
       decorator: "UPLOAD_FAILURE",
       error: true,
@@ -228,7 +226,7 @@ export async function formMultipart(req, res, { user, bucketName, originalFileNa
     const newUpload = await refreshed.buckets.listIpfsPath(response.data);
     data.size = newUpload.size;
 
-    Logs.task(`${data.name} : ${Strings.bytesToSize(data.size)} uploaded`, WORKER_NAME);
+    ScriptLogging.message(POST, `${data.name} : ${Strings.bytesToSize(data.size)} uploaded`);
   } catch (e) {
     Social.sendTextileSlackMessage({
       file: "/node_common/upload.js",
@@ -245,6 +243,6 @@ export async function formMultipart(req, res, { user, bucketName, originalFileNa
     };
   }
 
-  Logs.task(`SUCCESS !!!`, WORKER_NAME);
+  ScriptLogging.message(POST, `SUCCESS !!!`);
   return { decorator: "UPLOAD_SUCCESS", data, ipfs: response.data };
 }
