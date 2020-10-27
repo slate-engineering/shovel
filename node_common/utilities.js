@@ -9,8 +9,8 @@ import JWT from "jsonwebtoken";
 import { Buckets, PrivateKey, Pow, Client, ThreadID } from "@textile/hub";
 
 const BUCKET_NAME = "data";
-
 const INIT = "INIT BUCKETS    ";
+const SHOVEL = "SHOVEL          ";
 
 const TEXTILE_KEY_INFO = {
   key: Environment.TEXTILE_HUB_KEY,
@@ -22,18 +22,9 @@ export const decodeCookieToken = (token) => {
     const decoded = JWT.verify(token, Environment.JWT_SECRET);
     return decoded.id;
   } catch (e) {
-    ScriptLogging.error("SHOVEL          ", e.message);
+    ScriptLogging.error(SHOVEL, e.message);
     return null;
   }
-};
-
-export const parseAuthHeader = (value) => {
-  if (typeof value !== "string") {
-    return null;
-  }
-
-  var matches = value.match(/(\S+)\s+(\S+)/);
-  return matches && { scheme: matches[1], value: matches[2] };
 };
 
 export const setupWithThread = async ({ buckets }) => {
@@ -56,15 +47,6 @@ export const setupWithThread = async ({ buckets }) => {
   }
 
   return buckets;
-};
-
-export const addExistingCIDToData = async ({ buckets, key, path, cid }) => {
-  try {
-    await buckets.setPath(key, path || "/", cid);
-    return true;
-  } catch (e) {
-    return false;
-  }
 };
 
 export const getBucketAPIFromUserToken = async ({ user, bucketName, encrypted = false }) => {

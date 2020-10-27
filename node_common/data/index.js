@@ -9,7 +9,6 @@ import getUserById from "~/node_common/data/methods/get-user-by-id";
 //NOTE(martina):
 // Pending user upload queries
 import getPendingDataForUserId from "~/node_common/data/methods/get-pending-data-for-user-id";
-import deletePendingDataByUserId from "~/node_common/data/methods/delete-pending-data-by-user-id";
 import createPendingData from "~/node_common/data/methods/create-pending-data";
 
 // NOTE(jim):
@@ -81,7 +80,6 @@ export {
   getUserById,
   // NOTE(martina): Pending user upload operations
   getPendingDataForUserId,
-  deletePendingDataByUserId,
   createPendingData,
   // NOTE(jim): Slate operations.
   createSlate,
