@@ -4,7 +4,7 @@ A lightweight server for uploading files.
 
 ### Environment Variables
 
-To use this with https://github.com/filecoin-project/slate you need the following environment variables.
+To use this with https://github.com/filecoin-project/slate you need the following environment variables. Use your current development `.env` variables.
 
 ```sh
 POSTGRES_ADMIN_PASSWORD=XXX
