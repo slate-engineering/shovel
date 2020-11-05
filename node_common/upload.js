@@ -26,7 +26,12 @@ export async function formMultipart(req, res, { user, bucketName, originalFileNa
   let data = null;
   let dataPath = null;
 
-  ScriptLogging.log(UPLOAD, `${user.username} is pushing ${originalFileName}`);
+  if (!Strings.isEmpty(originalFileName)) {
+    ScriptLogging.log(UPLOAD, `${user.username} is pushing ${originalFileName}`);
+  } else {
+    ScriptLogging.log(UPLOAD, `${user.username} is using the API`);
+  }
+
   ScriptLogging.message(UPLOAD, `heap size : ${heapSize}`);
   ScriptLogging.message(UPLOAD, `upload size : ${Strings.bytesToSize(uploadSizeBytes)}`);
 
@@ -84,9 +89,9 @@ export async function formMultipart(req, res, { user, bucketName, originalFileNa
   });
 
   const _createStreamAndUploadToTextile = async (writableStream) => {
-    return new Promise(function(resolvePromiseFn, rejectPromiseFn) {
+    return new Promise(function (resolvePromiseFn, rejectPromiseFn) {
       function _safeForcedSingleConcurrencyFn(actionFn, rejectFn, timeoutId) {
-        singleConcurrencyQueue.add(async function() {
+        singleConcurrencyQueue.add(async function () {
           try {
             await actionFn();
           } catch (e) {
@@ -123,7 +128,7 @@ export async function formMultipart(req, res, { user, bucketName, originalFileNa
         });
       }
 
-      writableStream.on("file", function(fieldname, stream, filename, encoding, mime) {
+      writableStream.on("file", function (fieldname, stream, filename, encoding, mime) {
         const timeoutId = `${user.username}-${filename}`;
 
         data = LibraryManager.createLocalDataIncomplete({
@@ -137,7 +142,7 @@ export async function formMultipart(req, res, { user, bucketName, originalFileNa
               .pushPath(bucketKey, data.id, stream, {
                 root: bucketRoot,
                 signal,
-                progress: function(num) {
+                progress: function (num) {
                   if (num % (HIGH_WATER_MARK * 5) !== 0) {
                     return;
                   }
@@ -145,7 +150,7 @@ export async function formMultipart(req, res, { user, bucketName, originalFileNa
                   ScriptLogging.progress(SHOVEL, `${timeoutId} : ${Strings.bytesToSize(num)}`);
                 },
               })
-              .catch(function(e) {
+              .catch(function (e) {
                 throw new Error(e.message);
               });
 
@@ -159,7 +164,7 @@ export async function formMultipart(req, res, { user, bucketName, originalFileNa
         );
       });
 
-      writableStream.on("finish", function() {
+      writableStream.on("finish", function () {
         return _safeForcedSingleConcurrencyFn(() => {
           ScriptLogging.message(SHOVEL, `upload finished ...`);
 
@@ -180,7 +185,7 @@ export async function formMultipart(req, res, { user, bucketName, originalFileNa
         }, rejectPromiseFn);
       });
 
-      writableStream.on("error", function(e) {
+      writableStream.on("error", function (e) {
         return _safeForcedSingleConcurrencyFn(() => {
           throw new Error(e.message);
         }, rejectPromiseFn);

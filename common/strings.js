@@ -34,3 +34,11 @@ export const bytesToSize = (bytes, decimals = 2) => {
 
   return `${(bytes / Math.pow(k, i)).toFixed(dm)} ${sizes[i]}`;
 };
+
+export const getKey = (text) => {
+  if (isEmpty(text)) {
+    return null;
+  }
+
+  return text.replace("Basic ", "");
+};
