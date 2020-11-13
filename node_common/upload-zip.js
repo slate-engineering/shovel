@@ -28,6 +28,11 @@ const unZip = async (stream, onEntry) => {
 };
 
 export const formMultipart = async (req, res, { user, bucketName }) => {
+  const { buckets, bucketKey } = await Utilities.getBucketAPIFromUserToken({
+    user,
+    bucketName,
+  });
+
   let data;
   const upload = () =>
     new Promise(async (resolve, reject) => {
@@ -44,11 +49,6 @@ export const formMultipart = async (req, res, { user, bucketName }) => {
         });
 
         await unZip(stream, async (entry, fileName) => {
-          const { buckets, bucketKey } = await Utilities.getBucketAPIFromUserToken({
-            user,
-            bucketName,
-          });
-
           if (!buckets) {
             return reject({
               decorator: "SERVER_BUCKET_INIT_FAILURE",
@@ -87,11 +87,10 @@ export const formMultipart = async (req, res, { user, bucketName }) => {
             });
           }
         });
+      });
+
+      form.on("finish", async () => {
         try {
-          const { buckets, bucketKey } = await Utilities.getBucketAPIFromUserToken({
-            user,
-            bucketName,
-          });
           const {
             item: { path },
           } = await buckets.listPath(bucketKey, data.id);
@@ -130,11 +129,6 @@ export const formMultipart = async (req, res, { user, bucketName }) => {
     console.log("[ upload ] ending due to errors.", e);
     return response;
   }
-
-  const { buckets } = await Utilities.getBucketAPIFromUserToken({
-    user,
-    bucketName,
-  });
 
   if (!buckets) {
     return {

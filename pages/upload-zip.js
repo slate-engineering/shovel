@@ -37,7 +37,7 @@ export default async (req, res) => {
   });
 
   if (!user || user.error) {
-    return res.status(403).send({ decorator: "UPLOAD_NOT_ALLOWED", error: true });
+    return res.status(403).json({ decorator: "UPLOAD_NOT_ALLOWED", error: true });
   }
 
   console.log(`[upload] zip upload for ${user.username} started`);
@@ -46,6 +46,7 @@ export default async (req, res) => {
   try {
     response = await Upload.formMultipart(req, res, {
       user,
+      originalFileName: req.params.upload,
     });
     console.log(`[upload] upload for ${user.username} responded`);
   } catch (e) {
@@ -54,14 +55,14 @@ export default async (req, res) => {
 
   if (!response) {
     console.log(`[upload] upload for ${user.username} unsuccessful`);
-    return res.status(413).send({ decorator: "SERVER_UPLOAD_ERROR", error: true });
+    return res.status(413).json({ decorator: "SERVER_UPLOAD_ERROR", error: true });
   }
 
   if (response.error) {
     // NOTE(jim): To debug potential textile issues with matching CIDs.
     console.log(`[upload] upload for ${user.username} unsuccessful`);
     console.log({ message: response.message });
-    return res.status(413).send({ decorator: response.decorator, error: response.error });
+    return res.status(413).json({ decorator: response.decorator, error: response.error });
   }
 
   console.log(`[upload] upload for ${user.username} successful`);
@@ -73,21 +74,11 @@ export default async (req, res) => {
     ipfs,
   });
 
-  const slateId = req.params ? req.params.b : null;
-
-  await Data.createPendingData({
-    data: finalData,
-    owner_user_id: user.id,
-    slate_id: slateId,
-  });
-  console.log("will push to slate");
-
   return res.status(200).send({
     decorator: "SERVER_UPLOAD",
     data: {
       data: finalData,
       owner_user_id: user.id,
-      slate_id: slateId,
     },
   });
 };
