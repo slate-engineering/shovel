@@ -1,38 +1,33 @@
 import * as LibraryManager from "~/node_common/managers/library";
 import * as Utilities from "~/node_common/utilities";
 import * as Social from "~/node_common/social";
-
 import iterateStream from "~/node_common/iterateStream";
 import unzipper from "unzipper";
 
 import B from "busboy";
 
-const UPLOAD = "UPLOADING       ";
-const SHOVEL = "RENDER->TEXTILE ";
-const POST = "POST PROCESS    ";
 const HIGH_WATER_MARK = 1024 * 1024 * 3;
 
 const unZip = async (stream, onEntry) => {
   const zip = stream.pipe(unzipper.Parse({ forceStream: true, verbose: true }));
 
-  for await (const entry of iterateStream(zip)) {
-    const fileName = entry.path;
-    console.log("unzippy", fileName);
-    const type = entry.type;
-    if (type === "File") {
-      await onEntry(entry, fileName);
-    } else {
-      entry.autodrain();
+  try {
+    for await (const entry of iterateStream(zip)) {
+      const fileName = entry.path;
+      console.log("unzippy", fileName);
+      const type = entry.type;
+      if (type === "File") {
+        await onEntry(entry, fileName);
+      } else {
+        entry.autodrain();
+      }
     }
+  } catch (e) {
+    console.error(e);
   }
 };
 
 export const formMultipart = async (req, res, { user, bucketName }) => {
-  const { buckets, bucketKey } = await Utilities.getBucketAPIFromUserToken({
-    user,
-    bucketName,
-  });
-
   let data;
   const upload = () =>
     new Promise(async (resolve, reject) => {
@@ -49,6 +44,11 @@ export const formMultipart = async (req, res, { user, bucketName }) => {
         });
 
         await unZip(stream, async (entry, fileName) => {
+          const { buckets, bucketKey } = await Utilities.getBucketAPIFromUserToken({
+            user,
+            bucketName,
+          });
+
           if (!buckets) {
             return reject({
               decorator: "SERVER_BUCKET_INIT_FAILURE",
@@ -87,10 +87,11 @@ export const formMultipart = async (req, res, { user, bucketName }) => {
             });
           }
         });
-      });
-
-      form.on("finish", async () => {
         try {
+          const { buckets, bucketKey } = await Utilities.getBucketAPIFromUserToken({
+            user,
+            bucketName,
+          });
           const {
             item: { path },
           } = await buckets.listPath(bucketKey, data.id);
@@ -129,6 +130,11 @@ export const formMultipart = async (req, res, { user, bucketName }) => {
     console.log("[ upload ] ending due to errors.", e);
     return response;
   }
+
+  const { buckets } = await Utilities.getBucketAPIFromUserToken({
+    user,
+    bucketName,
+  });
 
   if (!buckets) {
     return {
