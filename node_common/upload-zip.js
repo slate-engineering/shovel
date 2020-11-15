@@ -162,7 +162,6 @@ export async function formMultipart(req, res, { user, bucketName, originalFileNa
                     content: entry,
                   },
                   {
-                    // root: bucketRoot,
                     signal,
                     progress: function (num) {
                       if (num % (HIGH_WATER_MARK * 5) !== 0) {
