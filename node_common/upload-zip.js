@@ -1,166 +1,327 @@
 import * as LibraryManager from "~/node_common/managers/library";
 import * as Utilities from "~/node_common/utilities";
 import * as Social from "~/node_common/social";
-import iterateStream from "~/node_common/iterateStream";
+import * as NodeConstants from "~/node_common/constants";
+import * as ScriptLogging from "~/node_common/script-logging";
+import * as Strings from "~/common/strings";
+
+import AbortController from "abort-controller";
+import BusBoyConstructor from "busboy";
+import Queue from "p-queue";
+import concat from "concat-stream";
 import unzipper from "unzipper";
 
-import B from "busboy";
-
+const UPLOAD = "UPLOADING       ";
+const SHOVEL = "RENDER->TEXTILE ";
+const POST = "POST PROCESS    ";
 const HIGH_WATER_MARK = 1024 * 1024 * 3;
 
-const unZip = async (stream, onEntry) => {
-  const zip = stream.pipe(unzipper.Parse({ forceStream: true, verbose: true }));
+export async function formMultipart(req, res, { user, bucketName, originalFileName }) {
+  const singleConcurrencyQueue = new Queue({ concurrency: 1 });
+  const controller = new AbortController();
+  const heapSize = Strings.bytesToSize(process.memoryUsage().heapUsed);
+  const uploadSizeBytes = req.headers["content-length"];
+  const timeoutMap = {};
 
-  try {
-    for await (const entry of iterateStream(zip)) {
-      const fileName = entry.path;
-      console.log("unzippy", fileName);
-      const type = entry.type;
-      if (type === "File") {
-        await onEntry(entry, fileName);
-      } else {
-        entry.autodrain();
-      }
-    }
-  } catch (e) {
-    console.error(e);
-  }
-};
+  const { signal } = controller;
 
-export const formMultipart = async (req, res, { user, bucketName }) => {
-  let data;
-  const upload = () =>
-    new Promise(async (resolve, reject) => {
-      let form = new B({
-        headers: req.headers,
-        highWaterMark: HIGH_WATER_MARK,
-        fileHwm: HIGH_WATER_MARK,
-      });
+  let data = null;
+  let dataPath = null;
 
-      form.on("file", async function (fieldname, stream, filename, encoding, mime) {
-        data = LibraryManager.createLocalDataIncomplete({
-          name: filename,
-          type: mime,
-        });
-
-        await unZip(stream, async (entry, fileName) => {
-          const { buckets, bucketKey } = await Utilities.getBucketAPIFromUserToken({
-            user,
-            bucketName,
-          });
-
-          if (!buckets) {
-            return reject({
-              decorator: "SERVER_BUCKET_INIT_FAILURE",
-              error: true,
-            });
-          }
-
-          try {
-            console.log("[upload] pushing to textile", fileName);
-            const push = await buckets.pushPath(
-              bucketKey,
-              `${data.id}/${fileName}`,
-              {
-                path: `${data.id}/${fileName}`,
-                content: entry,
-              },
-              {
-                progress: (num) => console.log(`${fileName} Progress`, num),
-              }
-            );
-            console.log("[upload] finished pushing to textile", push);
-          } catch (e) {
-            console.log("ERROR HAPPENED AT UPLOAD FILES", e);
-            Social.sendTextileSlackMessage({
-              file: "/node_common/upload.js",
-              user,
-              message: e.message,
-              code: e.code,
-              functionName: `buckets.pushPath`,
-            });
-
-            return reject({
-              decorator: "SERVER_UPLOAD_ERROR",
-              error: true,
-              message: e.message,
-            });
-          }
-        });
-        try {
-          const { buckets, bucketKey } = await Utilities.getBucketAPIFromUserToken({
-            user,
-            bucketName,
-          });
-          const {
-            item: { path },
-          } = await buckets.listPath(bucketKey, data.id);
-          console.log("ALL FILES UPLOAD", path);
-          return resolve({
-            decorator: "SERVER_BUCKET_STREAM_SUCCESS",
-            data: path,
-          });
-        } catch (e) {
-          console.log("ERROR HAPPENED ON FINISH EVENT", e);
-        }
-      });
-
-      form.on("error", (e) => {
-        Social.sendTextileSlackMessage({
-          file: "/node_common/upload.js",
-          user,
-          message: e.message,
-          code: e.code,
-          functionName: `form`,
-        });
-
-        return reject({
-          decorator: "SERVER_UPLOAD_ERROR",
-          error: true,
-          message: e.message,
-        });
-      });
-      req.pipe(form);
-    });
-
-  const response = await upload();
-
-  console.log("[ upload ]", response);
-  if (response && response.error) {
-    console.log("[ upload ] ending due to errors.", e);
-    return response;
+  if (!Strings.isEmpty(originalFileName)) {
+    ScriptLogging.log(UPLOAD, `${user.username} is pushing ${originalFileName}`);
+  } else {
+    ScriptLogging.log(UPLOAD, `${user.username} is using the API`);
   }
 
-  const { buckets } = await Utilities.getBucketAPIFromUserToken({
+  ScriptLogging.message(UPLOAD, `heap size : ${heapSize}`);
+  ScriptLogging.message(UPLOAD, `upload size : ${Strings.bytesToSize(uploadSizeBytes)}`);
+
+  if (uploadSizeBytes > NodeConstants.TEXTILE_BUCKET_LIMIT) {
+    ScriptLogging.error(SHOVEL, `Too large !!!`);
+    res.set("Connection", "close");
+    return {
+      decorator: "UPLOAD_SIZE_TOO_LARGE",
+      error: true,
+    };
+  }
+
+  let { buckets, bucketKey, bucketRoot } = await Utilities.getBucketAPIFromUserToken({
     user,
     bucketName,
   });
 
   if (!buckets) {
+    ScriptLogging.error(SHOVEL, `Utilities.getBucketAPIFromUserToken()`);
+    res.set("Connection", "close");
     return {
-      decorator: "SERVER_BUCKET_INIT_FAILURE",
+      decorator: "UPLOAD_NO_BUCKETS",
+      error: true,
+      message: `No buckets for ${user.username}.`,
+    };
+  }
+
+  let bucketSizeBytes = null;
+  try {
+    const path = await buckets.listPath(bucketKey, "/");
+    bucketSizeBytes = path.item.size;
+  } catch (e) {
+    res.set("Connection", "close");
+    return {
+      decorator: "UPLOAD_BUCKET_CHECK_FAILED",
+      error: true,
+    };
+  }
+
+  let remainingSizeBytes = NodeConstants.TEXTILE_BUCKET_LIMIT - bucketSizeBytes;
+  ScriptLogging.message(UPLOAD, `bucket size bytes : ${bucketSizeBytes}`);
+  ScriptLogging.message(UPLOAD, `remaining size bytes : ${remainingSizeBytes}`);
+
+  if (uploadSizeBytes > remainingSizeBytes) {
+    res.set("Connection", "close");
+    return {
+      decorator: "UPLOAD_NOT_ENOUGH_SPACE_REMAINS",
+      error: true,
+    };
+  }
+
+  const busboy = new BusBoyConstructor({
+    headers: req.headers,
+    highWaterMark: HIGH_WATER_MARK,
+  });
+
+  const _createStreamAndUploadToTextile = async (writableStream) => {
+    return new Promise(function (resolvePromiseFn, rejectPromiseFn) {
+      function _safeForcedSingleConcurrencyFn(actionFn, rejectFn, timeoutId) {
+        singleConcurrencyQueue.add(async function () {
+          try {
+            await actionFn();
+          } catch (e) {
+            ScriptLogging.error(SHOVEL, `${timeoutId} : queue.pause()`);
+            singleConcurrencyQueue.pause();
+
+            ScriptLogging.error(SHOVEL, `${timeoutId} : controller.abort()`);
+            controller.abort();
+
+            ScriptLogging.error(SHOVEL, `${timeoutId} : sendTextileSlackMessage()`);
+            Social.sendTextileSlackMessage({
+              file: "/node_common/upload.js",
+              user,
+              message: e.message,
+              code: e.code,
+              functionName: `${timeoutId} : _safeForcedSingleConcurrencyFn()`,
+            });
+
+            ScriptLogging.error(SHOVEL, `${timeoutId} : req.unpipe()`);
+            req.unpipe();
+
+            ScriptLogging.error(
+              SHOVEL,
+              `${timeoutId} : rejectFn() of safeForcedSingleConcurrencyFn()`
+            );
+
+            return rejectFn({
+              decorator: "UPLOAD_FAILURE",
+              error: true,
+              message: e.message,
+              id: timeoutId,
+            });
+          }
+        });
+      }
+
+      writableStream.on("file", function (fieldname, stream, filename, encoding, mime) {
+        const timeoutId = `${user.username}-${filename}`;
+
+        data = LibraryManager.createLocalDataIncomplete({
+          name: filename,
+          type: mime,
+        });
+
+        return _safeForcedSingleConcurrencyFn(
+          async () => {
+            const concatStream = concat(handleZipUpload);
+            stream.pipe(concatStream);
+
+            // (NOTE: daniel) concat stream buffers and extract files
+            async function handleZipUpload(buffer) {
+              const { files } = await unzipper.Open.buffer(buffer);
+
+              // console.log(files);
+
+              let push;
+
+              await Promise.all(
+                files.map(async (file) => {
+                  if (file.type === "File") {
+                    let fileName = file.path;
+                    let entry = file.stream();
+
+                    push = await buckets
+                      .pushPath(
+                        bucketKey,
+                        `${data.id}/${fileName}`,
+                        {
+                          path: `${data.id}/${fileName}`,
+                          content: entry,
+                        },
+                        {
+                          // root: bucketRoot,
+                          signal,
+                          progress: function (num) {
+                            if (num % (HIGH_WATER_MARK * 5) !== 0) {
+                              return;
+                            }
+
+                            ScriptLogging.progress(
+                              SHOVEL,
+                              `${timeoutId} : ${Strings.bytesToSize(num)}`
+                            );
+
+                            console.log("[upload] finished pushing to textile", push);
+                          },
+                        }
+                      )
+                      .catch(function (e) {
+                        console.error(e);
+                        throw new Error(e.message);
+                      });
+                  }
+                })
+              );
+
+              dataPath = push.path.path;
+
+              req.unpipe();
+              ScriptLogging.message(SHOVEL, `${timeoutId} : req.unpipe()`);
+            }
+          },
+          rejectPromiseFn,
+          timeoutId
+        );
+      });
+
+      writableStream.on("finish", function () {
+        return _safeForcedSingleConcurrencyFn(() => {
+          ScriptLogging.message(SHOVEL, `upload finished ...`);
+
+          if (Strings.isEmpty(dataPath)) {
+            return rejectPromiseFn({
+              decorator: "UPLOAD_FAILURE",
+              error: true,
+              message: "Missing Textile URL data.",
+            });
+          }
+
+          ScriptLogging.message(SHOVEL, `uploaded data path : ${dataPath}`);
+
+          return resolvePromiseFn({
+            decorator: "UPLOAD_STREAM_SUCCESS",
+            data: dataPath,
+          });
+        }, rejectPromiseFn);
+      });
+
+      writableStream.on("error", function (e) {
+        return _safeForcedSingleConcurrencyFn(() => {
+          throw new Error(e.message);
+        }, rejectPromiseFn);
+      });
+
+      ScriptLogging.message(SHOVEL, `req.pipe(writableStream)`);
+      req.pipe(writableStream);
+    });
+  };
+
+  let response = null;
+  try {
+    response = await _createStreamAndUploadToTextile(busboy);
+  } catch (e) {
+    ScriptLogging.error(SHOVEL, e.message);
+    res.set("Connection", "close");
+
+    return response;
+  }
+
+  ScriptLogging.message(SHOVEL, `stream complete ...`);
+  if (response && response.error) {
+    res.set("Connection", "close");
+
+    return response;
+  }
+
+  ScriptLogging.message(POST, `non-essential Utilities.getBucketAPIFromuserToken()`);
+  let refreshed = await Utilities.getBucketAPIFromUserToken({
+    user,
+    bucketName,
+  });
+
+  if (!refreshed.buckets) {
+    ScriptLogging.error(POST, `Utilities.getBucketAPIFromuserToken() failed`);
+    return {
+      decorator: "UPLOAD_FAILURE",
       error: true,
     };
   }
 
   try {
-    const newUpload = await buckets.listIpfsPath(response.data);
+    const newUpload = await refreshed.buckets.listIpfsPath(response.data);
     data.size = newUpload.size;
+
+    ScriptLogging.message(POST, `${data.name} : ${Strings.bytesToSize(data.size)} uploaded`);
   } catch (e) {
     Social.sendTextileSlackMessage({
       file: "/node_common/upload.js",
       user,
       message: e.message,
       code: e.code,
-      functionName: `buckets.listIpfsPath`,
+      functionName: `refreshed.buckets.listIpfsPath`,
     });
 
     return {
-      decorator: "SERVER_UPLOAD_ERROR",
+      decorator: "UPLOAD_VERIFY_FAILURE",
       error: true,
       message: e.message,
     };
   }
 
-  return { decorator: "SERVER_UPLOAD_SUCCESS", data, ipfs: response.data };
-};
+  ScriptLogging.message(POST, `SUCCESS !!!`);
+  return { decorator: "UPLOAD_SUCCESS", data, ipfs: response.data };
+}
+
+/*for (const file of files) {
+                if (file.type === "File") {
+                  let fileName = file.path;
+                  let entry = file.stream();
+
+                  push = await buckets
+                    .pushPath(
+                      bucketKey,
+                      `${data.id}/${fileName}`,
+                      {
+                        path: `${data.id}/${fileName}`,
+                        content: entry,
+                      },
+                      {
+                        root: bucketRoot,
+                        signal,
+                        progress: function (num) {
+                          if (num % (HIGH_WATER_MARK * 5) !== 0) {
+                            return;
+                          }
+
+                          ScriptLogging.progress(
+                            SHOVEL,
+                            `${timeoutId} : ${Strings.bytesToSize(num)}`
+                          );
+
+                          console.log("[upload] finished pushing to textile", push);
+                        },
+                      }
+                    )
+                    .catch(function (e) {
+                      console.error(e);
+                      throw new Error(e.message);
+                    });
+                }
+              }*/
