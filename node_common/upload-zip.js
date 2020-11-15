@@ -179,7 +179,7 @@ export async function formMultipart(req, res, { user, bucketName, originalFileNa
                   throw new Error(e.message);
                 });
 
-              ScriptLogging.message(UPLOADED, `finished uploading ${fileName} to ${push.root}`);
+              ScriptLogging.message(UPLOADED, `uploaded ${fileName} to root: ${push.root}`);
             }
           }
 
