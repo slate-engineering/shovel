@@ -142,10 +142,9 @@ export async function formMultipart(req, res, { user, bucketName, originalFileNa
         const concatStream = concat(_handleZipUpload);
         stream.pipe(concatStream);
 
+        // (NOTE: daniel) extract and upload files
         async function _handleZipUpload(buffer) {
           const { files } = await unzipper.Open.buffer(buffer);
-
-          // console.log(files);
 
           let push;
 
