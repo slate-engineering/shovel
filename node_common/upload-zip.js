@@ -12,6 +12,7 @@ import concat from "concat-stream";
 import unzipper from "unzipper";
 
 const UPLOAD = "UPLOADING       ";
+const UPLOADED = "UPLOADED        ";
 const SHOVEL = "RENDER->TEXTILE ";
 const POST = "POST PROCESS    ";
 const HIGH_WATER_MARK = 1024 * 1024 * 3;
@@ -138,72 +139,53 @@ export async function formMultipart(req, res, { user, bucketName, originalFileNa
           type: mime,
         });
 
-        return _safeForcedSingleConcurrencyFn(
-          async () => {
-            const concatStream = concat(handleZipUpload);
-            stream.pipe(concatStream);
+        const concatStream = concat(_handleZipUpload);
+        stream.pipe(concatStream);
 
-            // (NOTE: daniel) concat stream buffers and extract files
-            async function handleZipUpload(buffer) {
-              const { files } = await unzipper.Open.buffer(buffer);
+        async function _handleZipUpload(buffer) {
+          const { files } = await unzipper.Open.buffer(buffer);
 
-              // console.log(files);
+          // console.log(files);
 
-              let push;
+          let push;
 
-              await Promise.all(
-                files.map(async (file) => {
-                  if (file.type === "File") {
-                    let fileName = file.path;
-                    let entry = file.stream();
+          for (const file of files) {
+            if (file.type === "File") {
+              let fileName = file.path;
+              let entry = file.stream();
 
-                    push = await buckets
-                      .pushPath(
-                        bucketKey,
-                        `${data.id}/${fileName}`,
-                        {
-                          path: `${data.id}/${fileName}`,
-                          content: entry,
-                        },
-                        {
-                          // root: bucketRoot,
-                          signal,
-                          progress: function (num) {
-                            if (num % (HIGH_WATER_MARK * 5) !== 0) {
-                              return;
-                            }
+              push = await buckets
+                .pushPath(
+                  bucketKey,
+                  `${data.id}/${fileName}`,
+                  {
+                    path: `${data.id}/${fileName}`,
+                    content: entry,
+                  },
+                  {
+                    // root: bucketRoot,
+                    signal,
+                    progress: function (num) {
+                      if (num % (HIGH_WATER_MARK * 5) !== 0) {
+                        return;
+                      }
 
-                            ScriptLogging.progress(
-                              SHOVEL,
-                              `${timeoutId} : ${Strings.bytesToSize(num)}`
-                            );
-
-                            console.log("[upload] finished pushing to textile", push);
-                          },
-                        }
-                      )
-                      .catch(function (e) {
-                        console.error(e);
-                        throw new Error(e.message);
-                      });
+                      ScriptLogging.progress(SHOVEL, `${timeoutId} : ${Strings.bytesToSize(num)}`);
+                    },
                   }
-                })
-              );
+                )
+                .catch(function (e) {
+                  console.error(e);
+                  throw new Error(e.message);
+                });
 
-              dataPath = push.path.path;
-
-              req.unpipe();
-              ScriptLogging.message(SHOVEL, `${timeoutId} : req.unpipe()`);
+              ScriptLogging.message(UPLOADED, `finished uploading ${fileName} to ${push.root}`);
             }
-          },
-          rejectPromiseFn,
-          timeoutId
-        );
-      });
+          }
 
-      writableStream.on("finish", function () {
-        return _safeForcedSingleConcurrencyFn(() => {
           ScriptLogging.message(SHOVEL, `upload finished ...`);
+
+          dataPath = push.root;
 
           if (Strings.isEmpty(dataPath)) {
             return rejectPromiseFn({
@@ -215,11 +197,14 @@ export async function formMultipart(req, res, { user, bucketName, originalFileNa
 
           ScriptLogging.message(SHOVEL, `uploaded data path : ${dataPath}`);
 
+          req.unpipe();
+          ScriptLogging.message(SHOVEL, `${timeoutId} : req.unpipe()`);
+
           return resolvePromiseFn({
             decorator: "UPLOAD_STREAM_SUCCESS",
             data: dataPath,
           });
-        }, rejectPromiseFn);
+        }
       });
 
       writableStream.on("error", function (e) {
@@ -286,42 +271,5 @@ export async function formMultipart(req, res, { user, bucketName, originalFileNa
   }
 
   ScriptLogging.message(POST, `SUCCESS !!!`);
-  return { decorator: "UPLOAD_SUCCESS", data, ipfs: response.data };
+  return { decorator: "UPLOAD_SUCCESS", data, ipfs: `${response.data}/${data.id}/index.html` };
 }
-
-/*for (const file of files) {
-                if (file.type === "File") {
-                  let fileName = file.path;
-                  let entry = file.stream();
-
-                  push = await buckets
-                    .pushPath(
-                      bucketKey,
-                      `${data.id}/${fileName}`,
-                      {
-                        path: `${data.id}/${fileName}`,
-                        content: entry,
-                      },
-                      {
-                        root: bucketRoot,
-                        signal,
-                        progress: function (num) {
-                          if (num % (HIGH_WATER_MARK * 5) !== 0) {
-                            return;
-                          }
-
-                          ScriptLogging.progress(
-                            SHOVEL,
-                            `${timeoutId} : ${Strings.bytesToSize(num)}`
-                          );
-
-                          console.log("[upload] finished pushing to textile", push);
-                        },
-                      }
-                    )
-                    .catch(function (e) {
-                      console.error(e);
-                      throw new Error(e.message);
-                    });
-                }
-              }*/
