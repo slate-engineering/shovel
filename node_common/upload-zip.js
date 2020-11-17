@@ -136,7 +136,7 @@ export async function formMultipart(req, res, { user, bucketName, originalFileNa
 
         data = LibraryManager.createLocalDataIncomplete({
           name: filename,
-          type: mime,
+          type: "application/unity",
         });
 
         const concatStream = concat(_handleZipUpload);
