@@ -134,8 +134,11 @@ export async function formMultipart(req, res, { user, bucketName, originalFileNa
       writableStream.on("file", function (fieldname, stream, filename, encoding, mime) {
         const timeoutId = `${user.username}-${filename}`;
 
+        // NOTE(daniel): Drop the .zip since we are extracting the files
+        const name = filename.split(".zip")[0];
+
         data = LibraryManager.createLocalDataIncomplete({
-          name: filename,
+          name,
           type: "application/unity",
         });
 
