@@ -176,7 +176,6 @@ export async function formMultipart(req, res, { user, bucketName, originalFileNa
                   }
                 )
                 .catch(function (e) {
-                  console.error(e);
                   throw new Error(e.message);
                 });
 
