@@ -28,6 +28,7 @@ export async function formMultipart(req, res, { user, bucketName, originalFileNa
 
   let data = null;
   let dataPath = null;
+  let unityGameConfig = null;
 
   if (!Strings.isEmpty(originalFileName)) {
     ScriptLogging.log(UPLOAD, `${user.username} is pushing ${originalFileName}`);
@@ -179,6 +180,12 @@ export async function formMultipart(req, res, { user, bucketName, originalFileNa
                   throw new Error(e.message);
                 });
 
+              // NOTE(daniel): name of unity game config json is dynamic.
+              // Hence, we need to return the name so that we can link to it in the client
+              if (fileName.endsWith(".json")) {
+                unityGameConfig = fileName;
+              }
+
               ScriptLogging.message(UPLOADED, `uploaded ${fileName} to root: ${push.root}`);
             }
           }
@@ -252,6 +259,7 @@ export async function formMultipart(req, res, { user, bucketName, originalFileNa
   try {
     const newUpload = await refreshed.buckets.listIpfsPath(response.data);
     data.size = newUpload.size;
+    data.unityGameConfig = unityGameConfig;
 
     ScriptLogging.message(POST, `${data.name} : ${Strings.bytesToSize(data.size)} uploaded`);
   } catch (e) {
