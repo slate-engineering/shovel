@@ -49,42 +49,22 @@ export const setupWithThread = async ({ buckets }) => {
   return buckets;
 };
 
+// NOTE(jim): Requires @textile/hub
 export const getBucketAPIFromUserToken = async ({ user, bucketName, encrypted = false }) => {
   const token = user.data.tokens.api;
   const name = Strings.isEmpty(bucketName) ? BUCKET_NAME : bucketName;
   const identity = await PrivateKey.fromString(token);
-  let buckets = await Buckets.withKeyInfo(TEXTILE_KEY_INFO);
+  let buckets = await Buckets.withKeyInfo(TEXTILE_KEY_INFO, { debug: true });
 
   await buckets.getToken(identity);
 
   let root = null;
-
-  ScriptLogging.message(INIT, `getOrCreate init ${name}`);
-
-  // NOTE(jim): captures `withThread` cases.
+  console.log(`[ buckets ] getOrCreate init ${name}`);
   try {
-    buckets = await setupWithThread({ buckets });
+    const created = await buckets.getOrCreate(name, encrypted);
+    root = created.root;
   } catch (e) {
-    ScriptLogging.error(INIT, `warning: ${e.message}`);
-  }
-
-  ScriptLogging.message(INIT, `getOrCreate thread found for ${name}`);
-
-  // NOTE(jim): captures finding your bucket and or creating a new one.
-  try {
-    const roots = await buckets.list();
-    root = roots.find((bucket) => bucket.name === name);
-    if (!root) {
-      ScriptLogging.message(INIT, `creating new bucket ${name}`);
-
-      if (encrypted) {
-        ScriptLogging.message(INIT, `this bucket will be encrypted`);
-      }
-
-      const created = await buckets.create(name, encrypted);
-      root = created.root;
-    }
-  } catch (e) {
+    console.log(`[ textile ] warning: ${e.message}`);
     Social.sendTextileSlackMessage({
       file: "/node_common/utilities.js",
       user,
@@ -92,12 +72,14 @@ export const getBucketAPIFromUserToken = async ({ user, bucketName, encrypted = 
       code: e.code,
       functionName: `buckets.getOrCreate`,
     });
+  }
 
+  if (!root) {
+    console.log(`[ buckets ] getOrCreate init for ${name} failed`);
     return { buckets: null, bucketKey: null, bucketRoot: null };
   }
 
-  ScriptLogging.message(INIT, `getOrCreate success for ${name}`);
-
+  console.log(`[ buckets ] getOrCreate success for ${name}`);
   return {
     buckets,
     bucketKey: root.key,
