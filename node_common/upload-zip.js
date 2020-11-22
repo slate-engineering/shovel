@@ -185,14 +185,14 @@ export async function formMultipart(req, res, { user, bucketName, originalFileNa
               if (/build(.*).json/i.test(fileName)) {
                 unityGameConfig = fileName;
               }
-              console.log(push);
+
               ScriptLogging.message(UPLOADED, `uploaded ${fileName} to root: ${push.root}`);
             }
           }
 
           ScriptLogging.message(SHOVEL, `upload finished ...`);
 
-          dataPath = push.root;
+          dataPath = `${push.root}/${data.id}`;
 
           if (Strings.isEmpty(dataPath)) {
             return rejectPromiseFn({
@@ -258,13 +258,11 @@ export async function formMultipart(req, res, { user, bucketName, originalFileNa
 
   try {
     const newUpload = await refreshed.buckets.listIpfsPath(response.data);
-    const gameIPFSPath = await refreshed.buckets.listPath(bucketKey, `/${data.id}`);
 
     data.size = newUpload.size;
     data.unityGameConfig = unityGameConfig;
 
     console.log("newUpload", newUpload);
-    console.log("gameIPFSPath", gameIPFSPath);
 
     ScriptLogging.message(POST, `${data.name} : ${Strings.bytesToSize(data.size)} uploaded`);
   } catch (e) {
@@ -284,5 +282,5 @@ export async function formMultipart(req, res, { user, bucketName, originalFileNa
   }
 
   ScriptLogging.message(POST, `SUCCESS !!!`);
-  return { decorator: "UPLOAD_SUCCESS", data, ipfs: `${response.data}/${data.id}/index.html` };
+  return { decorator: "UPLOAD_SUCCESS", data, ipfs: `${response.data}/index.html` };
 }
