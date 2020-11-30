@@ -1,6 +1,6 @@
 # Shovel
 
-A lightweight server for uploading files.
+Data transfer micro-service
 
 ### Environment Variables
 
