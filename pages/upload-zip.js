@@ -68,7 +68,6 @@ export default async (req, res) => {
   console.log(`[upload] upload for ${user.username} successful`);
 
   const { data, ipfs } = response;
-  console.log("DATAA", data);
 
   const finalData = LibraryManager.updateDataIPFS(data, {
     ipfs,
