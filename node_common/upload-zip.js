@@ -258,14 +258,15 @@ export async function formMultipart(req, res, { user, bucketName, originalFileNa
     };
   }
 
+  let gameRootUrl = null;
+
   try {
     const newUpload = await refreshed.buckets.listIpfsPath(response.data);
-
     data.size = newUpload.size;
     data.unityGameConfig = unityGameConfig;
     data.unityGameLoader = unityGameLoader;
 
-    console.log("newUpload", newUpload);
+    gameRootUrl = newUpload.cid;
 
     ScriptLogging.message(POST, `${data.name} : ${Strings.bytesToSize(data.size)} uploaded`);
   } catch (e) {
@@ -285,5 +286,5 @@ export async function formMultipart(req, res, { user, bucketName, originalFileNa
   }
 
   ScriptLogging.message(POST, `SUCCESS !!!`);
-  return { decorator: "UPLOAD_SUCCESS", data, ipfs: `${response.data}/index.html` };
+  return { decorator: "UPLOAD_SUCCESS", data, ipfs: gameRootUrl };
 }
