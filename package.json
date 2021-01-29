@@ -17,7 +17,7 @@
     "@babel/core": "^7.12.10",
     "@babel/plugin-transform-runtime": "^7.12.10",
     "@babel/preset-env": "^7.12.11",
-    "@babel/register": "^7.10.5",
+    "@babel/register": "^7.12.10",
     "@slack/webhook": "^5.0.3",
     "@textile/hub": "^2.0.2",
     "abort-controller": "^3.0.0",
