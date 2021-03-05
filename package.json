@@ -21,6 +21,7 @@
     "@slack/webhook": "^6.0.0",
     "@textile/hub": "^5.2.0",
     "abort-controller": "^3.0.0",
+    "archiver": "^5.2.0",
     "babel-plugin-module-resolver": "^4.1.0",
     "body-parser": "^1.19.0",
     "busboy": "^0.3.1",
@@ -29,10 +30,12 @@
     "cors": "^2.8.5",
     "dotenv": "^8.2.0",
     "express": "^4.17.1",
+    "ioredis": "^4.23.0",
     "jsonwebtoken": "^8.5.1",
     "knex": "^0.21.16",
     "p-queue": "^6.6.2",
     "pg": "^8.5.1",
+    "request": "^2.88.2",
     "unzipper": "^0.10.11",
     "uuid": "^8.3.2"
   }
