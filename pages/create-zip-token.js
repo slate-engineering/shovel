@@ -1,10 +1,11 @@
 import { v4 } from "uuid";
 import Redis from "ioredis";
+import * as Environment from "~/node_common/environment";
 
 const redisClient = new Redis({
-  port: process.env.REDIS_PORT,
-  host: process.env.REDIS_HOST,
-  password: process.env.REDIS_PASSWORD,
+  port: Environment.REDIS_PORT,
+  host: Environment.REDIS_HOST,
+  password: Environment.REDIS_PASSWORD,
 });
 
 export default async (req, res) => {

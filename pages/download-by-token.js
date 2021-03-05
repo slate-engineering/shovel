@@ -1,11 +1,12 @@
 import archiver from "archiver";
 import Request from "request";
 import Redis from "ioredis";
+import * as Environment from "~/node_common/environment";
 
 const redisClient = new Redis({
-  port: process.env.REDIS_PORT,
-  host: process.env.REDIS_HOST,
-  password: process.env.REDIS_PASSWORD,
+  port: Environment.REDIS_PORT,
+  host: Environment.REDIS_HOST,
+  password: Environment.REDIS_PASSWORD,
 });
 
 const request = (link) => Request.get(link);
@@ -15,7 +16,7 @@ const DOWNLOAD_ERROR_MESSAGE = `
 <html lang="en">
 	<head>
 		<script>
-          parent.postMessage('SLATE_DOWNLOAD_ERROR','${process.env.RESOURCE_URI_SLATE}');
+          parent.postMessage('SLATE_DOWNLOAD_ERROR','${Environment.RESOURCE_URI_SLATE}');
     </script>
 	</head>
 	<body></body>
