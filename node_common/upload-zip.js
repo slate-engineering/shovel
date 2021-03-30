@@ -182,7 +182,7 @@ export async function formMultipart(req, res, { user, bucketName, originalFileNa
                 });
 
               const isUnityLoaderFile = (fileName) =>
-                [/build\/unityloader.js/i, /build(.*).loader.js/i].some((item) =>
+                [/build\/unityloader.js/i, /build(.*)\.loader.js/i].some((item) =>
                   item.test(fileName)
                 );
 
