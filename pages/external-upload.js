@@ -13,20 +13,9 @@ export default async (req, res) => {
     });
   }
 
-  let slate = await Data.getSlateById({ id: req.params.slate });
-
-  if (!slate) {
-    return res.status(404).send({
-      decorator: "V1_SERVER_UPLOAD_SLATE_NOT_FOUND",
-      error: true,
-    });
-  }
-
-  if (slate.error) {
-    return res.status(500).send({
-      decorator: "V1_SERVER_UPLOAD_SLATE_NOT_FOUND",
-      error: true,
-    });
+  let slate;
+  if (req.params.slate) {
+    slate = await Data.getSlateById({ id: req.params.slate });
   }
 
   const parsed = Strings.getKey(req.headers.authorization);
@@ -89,61 +78,47 @@ export default async (req, res) => {
     data: updatedUserDataFields,
   });
 
-  slate = await Data.getSlateById({ id: req.params.slate });
+  if (slate && !slate.error) {
+    const cid = updatedData.cid;
+    const url = `${Constants.IPFS_GATEWAY_URL}/${cid}`;
+    const newSlateObjectEntity = {
+      id: updatedData.id,
+      name: updatedData.name,
+      title: updatedData.name,
+      type: updatedData.type,
+      ownerId: user.id,
+      url,
+    };
+    const objects = [...slate.data.objects, newSlateObjectEntity];
 
-  if (!slate) {
-    return res.status(404).send({
-      decorator: "V1_SERVER_UPLOAD_SLATE_NOT_FOUND",
-      error: true,
+    const updatedSlate = await Data.updateSlateById({
+      id: slate.id,
+      updated_at: new Date(),
+      data: {
+        ...slate.data,
+        objects,
+      },
     });
-  }
 
-  if (slate.error) {
-    return res.status(500).send({
-      decorator: "V1_SERVER_UPLOAD_SLATE_NOT_FOUND",
-      error: true,
-    });
-  }
+    if (!updatedSlate) {
+      return res.status(500).send({
+        decorator: "V1_SERVER_UPLOAD_TO_SLATE_ERROR",
+        error: true,
+      });
+    }
 
-  const cid = updatedData.cid;
-  const url = `${Constants.IPFS_GATEWAY_URL}/${cid}`;
-  const newSlateObjectEntity = {
-    id: updatedData.id,
-    name: updatedData.name,
-    title: updatedData.name,
-    type: updatedData.type,
-    ownerId: user.id,
-    url,
-  };
-  const objects = [...slate.data.objects, newSlateObjectEntity];
-
-  const updatedSlate = await Data.updateSlateById({
-    id: slate.id,
-    updated_at: new Date(),
-    data: {
-      ...slate.data,
-      objects,
-    },
-  });
-
-  if (!updatedSlate) {
-    return res.status(500).send({
-      decorator: "V1_SERVER_UPLOAD_TO_SLATE_ERROR",
-      error: true,
-    });
-  }
-
-  if (updatedSlate.error) {
-    return res.status(500).send({
-      decorator: "V1_SERVER_UPLOAD_TO_SLATE_ERROR",
-      error: true,
-    });
+    if (updatedSlate.error) {
+      return res.status(500).send({
+        decorator: "V1_SERVER_UPLOAD_TO_SLATE_ERROR",
+        error: true,
+      });
+    }
   }
 
   return res.status(200).send({
     decorator: "V1_UPLOAD_DATA_TO_SLATE",
-    data: updatedData,
-    slate: updatedSlate,
+    data,
+    slate,
     url,
   });
 };
