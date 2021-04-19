@@ -14,8 +14,7 @@ export default async ({ password, username, salt, data = {} }) => {
         .returning("*");
 
       const index = query ? query.pop() : null;
-      index.type = "USER";
-      return index;
+      return JSON.parse(JSON.stringify(index));
     },
     errorFn: async (e) => {
       return {

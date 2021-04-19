@@ -4,6 +4,7 @@ import * as ScriptLogging from "~/node_common/script-logging";
 import APIRouteIndex from "~/pages";
 import APIRouteUpload from "~/pages/upload";
 import APIRouteUploadExternal from "~/pages/external-upload";
+import APIRouteSlateUploadExternal from "~/pages/external-slate-upload";
 import APIRouteUploadZip from "~/pages/upload-zip";
 import APICreateZipToken from "~/pages/create-zip-token";
 import APIDownloadByToken from "~/pages/download-by-token";
@@ -25,10 +26,16 @@ server.get("/", async (req, res) => {
   return await APIRouteIndex(req, res);
 });
 
-server.post("/api/public/:slate", async (req, res) => {
+server.post("/api/public", async (req, res) => {
   req.setTimeout(0);
 
   return await APIRouteUploadExternal(req, res);
+});
+
+server.post("/api/public/:slate", async (req, res) => {
+  req.setTimeout(0);
+
+  return await APIRouteSlateUploadExternal(req, res);
 });
 
 server.post("/api/data/:upload", async (req, res) => {

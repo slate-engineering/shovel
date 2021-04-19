@@ -4,10 +4,13 @@ import * as Social from "~/node_common/social";
 import * as ScriptLogging from "~/node_common/script-logging";
 import * as Strings from "~/common/strings";
 
+import crypto from "crypto";
 import JWT from "jsonwebtoken";
 
 import { Buckets, PrivateKey, Pow, Client, ThreadID } from "@textile/hub";
 
+const ENCRYPTION_ALGORITHM = "aes-256-ctr";
+const ENCRYPTION_IV = crypto.randomBytes(16);
 const BUCKET_NAME = "data";
 const INIT = "INIT BUCKETS    ";
 const SHOVEL = "SHOVEL          ";
@@ -25,6 +28,16 @@ export const decodeCookieToken = (token) => {
     ScriptLogging.error(SHOVEL, e.message);
     return null;
   }
+};
+
+export const encryptWithSecret = async (text, secret) => {
+  const cipher = crypto.createCipheriv(ENCRYPTION_ALGORITHM, secret, ENCRYPTION_IV);
+  const encrypted = Buffer.concat([cipher.update(text), cipher.final()]);
+
+  return {
+    iv: ENCRYPTION_IV.toString("hex"),
+    hex: encrypted.toString("hex"),
+  };
 };
 
 export const setupWithThread = async ({ buckets }) => {

@@ -1,23 +1,23 @@
 import { runQuery } from "~/node_common/data/utilities";
 
-export default async ({ data, owner_user_id }) => {
+export default async ({ data }) => {
   return await runQuery({
-    label: "CREATE_PENDING_DATA",
+    label: "CREATE_ORPHAN",
     queryFn: async (DB) => {
       const query = await DB.insert({
+        createdAt: new Date(),
         data,
-        owner_user_id,
       })
-        .into("pending")
+        .into("orphans")
         .returning("*");
 
       const index = query ? query.pop() : null;
-      return index;
+      return JSON.parse(JSON.stringify(index));
     },
     errorFn: async (e) => {
       return {
         error: true,
-        decorator: "CREATE_PENDING_DATA",
+        decorator: "CREATE_ORPHAN",
       };
     },
   });

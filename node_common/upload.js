@@ -229,9 +229,12 @@ export async function formMultipart(req, res, { user, bucketName, originalFileNa
 
   try {
     const newUpload = await refreshed.buckets.listIpfsPath(response.data);
-    data.size = newUpload.size;
+    data.data.size = newUpload.size;
 
-    ScriptLogging.message(POST, `${data.name} : ${Strings.bytesToSize(data.size)} uploaded`);
+    ScriptLogging.message(
+      POST,
+      `${data.filename} : ${Strings.bytesToSize(data.data.size)} uploaded`
+    );
   } catch (e) {
     Social.sendTextileSlackMessage({
       file: "/node_common/upload.js",
@@ -248,6 +251,8 @@ export async function formMultipart(req, res, { user, bucketName, originalFileNa
     };
   }
 
+  data.cid = response.data.replace("/ipfs/", "");
+  console.log(data);
   ScriptLogging.message(POST, `SUCCESS !!!`);
-  return { decorator: "UPLOAD_SUCCESS", data, ipfs: response.data };
+  return { decorator: "UPLOAD_SUCCESS", data };
 }

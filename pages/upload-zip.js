@@ -67,16 +67,12 @@ export default async (req, res) => {
 
   console.log(`[upload] upload for ${user.username} successful`);
 
-  const { data, ipfs } = response;
-
-  const finalData = LibraryManager.updateDataIPFS(data, {
-    ipfs,
-  });
+  const { data } = response;
 
   return res.status(200).send({
     decorator: "SERVER_UPLOAD",
     data: {
-      data: finalData,
+      data,
       owner_user_id: user.id,
     },
   });

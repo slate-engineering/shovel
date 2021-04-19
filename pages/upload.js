@@ -26,6 +26,7 @@ export default async (req, res, options) => {
   const id = Utilities.decodeCookieToken(req.headers.authorization);
 
   if (Strings.isEmpty(id)) {
+    console.log("no cookie token");
     return res.status(403).json({
       decorator: "SERVER_AUTHENTICATION_MISSING",
       error: true,
@@ -37,6 +38,7 @@ export default async (req, res, options) => {
   });
 
   if (!user || user.error) {
+    console.log("no user");
     return res.status(403).json({ decorator: "UPLOAD_NOT_ALLOWED", error: true });
   }
 
@@ -59,16 +61,12 @@ export default async (req, res, options) => {
     return res.status(413).json({ decorator: response.decorator, error: response.error });
   }
 
-  const { data, ipfs } = response;
-
-  const finalData = LibraryManager.updateDataIPFS(data, {
-    ipfs,
-  });
+  const { data } = response;
 
   return res.status(200).json({
     decorator: "SERVER_UPLOAD",
     data: {
-      data: finalData,
+      data,
       owner_user_id: user.id,
     },
   });

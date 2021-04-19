@@ -2,19 +2,15 @@ import { v4 as uuid } from "uuid";
 
 export const createLocalDataIncomplete = ({ type, size, name }, id = null) => {
   return {
-    id: !id ? `data-${uuid()}` : id,
-    name: name,
-    decorator: "FILE",
-    icon: type,
-    type: type,
-    size: size,
-    file: name,
-    date: new Date(),
+    id: !id ? uuid() : id,
+    filename: name,
+    createdAt: new Date(),
+    data: {
+      name: name,
+      type: type,
+      size: size,
+    },
   };
-};
-
-export const updateDataIPFS = (d, { ipfs }) => {
-  return { ...d, cid: ipfs.replace("/ipfs/", ""), ipfs };
 };
 
 export const addData = ({ user, files }) => {

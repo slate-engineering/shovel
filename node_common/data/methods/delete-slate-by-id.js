@@ -4,13 +4,15 @@ export default async ({ id }) => {
   return await runQuery({
     label: "DELETE_SLATE_BY_ID",
     queryFn: async (DB) => {
-      const subscriptions = await DB.from("subscriptions")
-        .where({ target_slate_id: id })
-        .del();
+      const subscriptions = await DB("subscriptions").where({ slateId: id }).del();
 
-      const data = await DB.from("slates").where({ id }).del();
+      const slateFiles = await DB("slate_files").where({ slateId: id }).del();
 
-      return 1 === data;
+      const activity = await DB("activity").where({ slateId: id }).del();
+
+      const slates = await DB("slates").where({ id }).del();
+
+      return 1 === slates;
     },
     errorFn: async (e) => {
       return {
