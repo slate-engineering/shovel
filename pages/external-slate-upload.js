@@ -90,27 +90,34 @@ export default async (req, res) => {
     return res.status(500).send({ decorator: response.decorator, error: response.error });
   }
 
-  const addResponse = await Data.createSlateFiles({
+  let duplicateCids = await Data.getSlateFilesByCids({
     slateId: slate.id,
-    ids: response.map((file) => file.id),
+    cids: [data.cid],
   });
 
-  if (!addResponse) {
-    return res.status(404).send({ decorator: "V1_SERVER_SLATE_UPLOAD_FAILED", error: true });
-  }
-
-  if (addResponse.error) {
-    return res.status(500).send({ decorator: response.decorator, error: response.error });
-  }
-
-  if (slate.isPublic) {
-    const publicFiles = await Data.getFilesByIds({
-      ids: [data.id],
-      publicOnly: true,
+  if (!duplicateCids.length) {
+    const addResponse = await Data.createSlateFiles({
+      slateId: slate.id,
+      fileId: data.id,
     });
 
-    if (publicFiles.length) {
-      SearchManager.updateFile(publicFiles, "ADD");
+    if (!addResponse) {
+      return res.status(404).send({ decorator: "V1_SERVER_SLATE_UPLOAD_FAILED", error: true });
+    }
+
+    if (addResponse.error) {
+      return res.status(500).send({ decorator: response.decorator, error: response.error });
+    }
+
+    if (slate.isPublic) {
+      const publicFiles = await Data.getFilesByIds({
+        ids: [data.id],
+        publicOnly: true,
+      });
+
+      if (publicFiles.length) {
+        SearchManager.updateFile(publicFiles, "ADD");
+      }
     }
   }
 

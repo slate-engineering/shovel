@@ -6,6 +6,8 @@ import * as Websocket from "~/node_common/nodejs-websocket";
 import * as NodeLogging from "~/node_common/node-logging";
 import * as Window from "~/common/window";
 
+import WebSocket from "ws";
+
 const websocketSend = async (type, data) => {
   if (Strings.isEmpty(Environment.PUBSUB_SECRET)) {
     return;
@@ -23,13 +25,15 @@ const websocketSend = async (type, data) => {
   );
 
   // NOTE(jim): Only allow this to be passed around encrypted.
-  ws.send(
-    JSON.stringify({
-      type,
-      iv: encryptedData.iv,
-      data: encryptedData.hex,
-    })
-  );
+  if (ws.readyState === WebSocket.OPEN) {
+    ws.send(
+      JSON.stringify({
+        type,
+        iv: encryptedData.iv,
+        data: encryptedData.hex,
+      })
+    );
+  }
 };
 
 export const updateFile = async (file, action) => {
