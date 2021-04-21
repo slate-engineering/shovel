@@ -131,13 +131,12 @@ export async function formMultipart(req, res, { user, bucketName, originalFileNa
       writableStream.on("file", function (fieldname, stream, filename, encoding, mime) {
         const timeoutId = `${user.username}-${filename}`;
 
-        let id = mime.startsWith("image") ? fieldname : null;
         data = LibraryManager.createLocalDataIncomplete(
           {
             name: filename,
             type: mime,
           },
-          id
+          fieldname
         );
 
         return _safeForcedSingleConcurrencyFn(
