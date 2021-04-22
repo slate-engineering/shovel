@@ -1,19 +1,23 @@
 import { runQuery } from "~/node_common/data/utilities";
 
-export default async ({ subscriberUserId, slateId, userId }) => {
+export default async ({ ownerId, slateId, userId }) => {
   return await runQuery({
     label: "CREATE_SUBSCRIPTION",
     queryFn: async (DB) => {
+      console.log({
+        ownerId,
+        slateId,
+        userId,
+      });
       const query = await DB.insert({
-        owner_user_id: subscriberUserId,
-        target_slate_id: slateId,
-        target_user_id: userId,
+        ownerId,
+        slateId,
+        userId,
       })
         .into("subscriptions")
         .returning("*");
 
       const index = query ? query.pop() : null;
-      index.type = "SUBSCRIPTION";
       return JSON.parse(JSON.stringify(index));
     },
     errorFn: async (e) => {

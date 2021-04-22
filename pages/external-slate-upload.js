@@ -1,6 +1,5 @@
 import * as Data from "~/node_common/data";
-import * as Constants from "~/node_common/constants";
-import * as LibraryManager from "~/node_common/managers/library";
+import * as SearchManager from "~/node_common/managers/search";
 import * as Strings from "~/common/strings";
 import * as ScriptLogging from "~/node_common/script-logging";
 import * as Upload from "~/node_common/upload";
@@ -13,7 +12,7 @@ export default async (req, res) => {
     });
   }
 
-  const slate = await Data.getSlateById({ id: req.params.slate });
+  let slate = await Data.getSlateById({ id: req.params.slate });
 
   if (!slate) {
     return res.status(404).send({
@@ -49,7 +48,7 @@ export default async (req, res) => {
   }
 
   const user = await Data.getUserById({
-    id: key.owner_id,
+    id: key.ownerId,
   });
 
   let uploadResponse = null;
@@ -73,61 +72,58 @@ export default async (req, res) => {
     });
   }
 
-  const { data, ipfs } = uploadResponse;
+  const { data } = uploadResponse;
 
-  const updatedData = LibraryManager.updateDataIPFS(data, {
-    ipfs,
-  });
+  const duplicateFile = await Data.getFileByCid({ ownerId: user.id, cid: data.cid });
 
-  const { updatedUserDataFields } = LibraryManager.addData({
-    user,
-    files: [updatedData],
-  });
-
-  await Data.updateUserById({
-    id: user.id,
-    data: updatedUserDataFields,
-  });
-
-  const cid = updatedData.cid;
-  const url = `${Constants.IPFS_GATEWAY_URL}/${cid}`;
-  const newSlateObjectEntity = {
-    id: updatedData.id,
-    name: updatedData.name,
-    title: updatedData.name,
-    type: updatedData.type,
-    ownerId: user.id,
-    url,
-  };
-  const objects = [...slate.data.objects, newSlateObjectEntity];
-
-  const updatedSlate = await Data.updateSlateById({
-    id: slate.id,
-    updated_at: new Date(),
-    data: {
-      ...slate.data,
-      objects,
-    },
-  });
-
-  if (!updatedSlate) {
-    return res.status(500).send({
-      decorator: "V1_SERVER_UPLOAD_TO_SLATE_ERROR",
-      error: true,
-    });
+  if (duplicateFile) {
+    return res.status(400).send({ decorator: "V1_SERVER_UPLOAD_FILE_DUPLICATE", error: true });
   }
 
-  if (updatedSlate.error) {
-    return res.status(500).send({
-      decorator: "V1_SERVER_UPLOAD_TO_SLATE_ERROR",
-      error: true,
+  const response = await Data.createFile({ ...data, ownerId: user.id });
+
+  if (!response) {
+    return res.status(404).send({ decorator: "V1_SERVER_UPLOAD_FAILED", error: true });
+  }
+
+  if (response.error) {
+    return res.status(500).send({ decorator: response.decorator, error: response.error });
+  }
+
+  let duplicateCids = await Data.getSlateFilesByCids({
+    slateId: slate.id,
+    cids: [data.cid],
+  });
+
+  if (!duplicateCids.length) {
+    const addResponse = await Data.createSlateFiles({
+      slateId: slate.id,
+      fileId: data.id,
     });
+
+    if (!addResponse) {
+      return res.status(404).send({ decorator: "V1_SERVER_SLATE_UPLOAD_FAILED", error: true });
+    }
+
+    if (addResponse.error) {
+      return res.status(500).send({ decorator: response.decorator, error: response.error });
+    }
+
+    if (slate.isPublic) {
+      const publicFiles = await Data.getFilesByIds({
+        ids: [data.id],
+        publicOnly: true,
+      });
+
+      if (publicFiles.length) {
+        SearchManager.updateFile(publicFiles, "ADD");
+      }
+    }
   }
 
   return res.status(200).send({
     decorator: "V1_UPLOAD_DATA_TO_SLATE",
-    data: updatedData,
-    slate: updatedSlate,
-    url,
+    data,
+    slate,
   });
 };

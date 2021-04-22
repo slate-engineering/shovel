@@ -33,7 +33,7 @@ export default async (req, res) => {
   }
 
   const user = await Data.getUserById({
-    id: key.owner_id,
+    id: key.ownerId,
   });
 
   let uploadResponse = null;
@@ -57,24 +57,26 @@ export default async (req, res) => {
     });
   }
 
-  const { data, ipfs } = uploadResponse;
+  const { data } = uploadResponse;
 
-  const updatedData = LibraryManager.updateDataIPFS(data, {
-    ipfs,
-  });
+  const duplicateFile = await Data.getFileByCid({ ownerId: user.id, cid: data.cid });
 
-  const { updatedUserDataFields } = LibraryManager.addData({
-    user,
-    files: [updatedData],
-  });
+  if (duplicateFile) {
+    return res.status(400).send({ decorator: "V1_SERVER_UPLOAD_FILE_DUPLICATE", error: true });
+  }
 
-  await Data.updateUserById({
-    id: user.id,
-    data: updatedUserDataFields,
-  });
+  const response = await Data.createFile({ ...data, ownerId: user.id });
+
+  if (!response) {
+    return res.status(404).send({ decorator: "V1_SERVER_UPLOAD_FAILED", error: true });
+  }
+
+  if (response.error) {
+    return res.status(500).send({ decorator: response.decorator, error: response.error });
+  }
 
   return res.status(200).send({
     decorator: "V1_UPLOAD_DATA_TO_SLATE",
-    data: updatedData,
+    data,
   });
 };

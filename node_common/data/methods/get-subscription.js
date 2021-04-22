@@ -1,10 +1,18 @@
 import { runQuery } from "~/node_common/data/utilities";
 
-export default async ({ id }) => {
+export default async ({ ownerId, slateId, userId }) => {
+  let whereQuery;
+
+  if (slateId) {
+    whereQuery = { ownerId, slateId };
+  } else if (userId) {
+    whereQuery = { ownerId, userId };
+  }
+
   return await runQuery({
-    label: "GET_TRUSTED_RELATIONSHIP_BY_ID",
+    label: "GET_SUBSCRIPTION",
     queryFn: async (DB) => {
-      const query = await DB.select("*").from("trusted").where({ id }).first();
+      const query = await DB.select("*").from("subscriptions").where(whereQuery).first();
 
       if (!query || query.error) {
         return null;
@@ -19,7 +27,7 @@ export default async ({ id }) => {
     errorFn: async (e) => {
       return {
         error: true,
-        decorator: "GET_TRUSTED_RELATIONSHIP_BY_ID",
+        decorator: "GET_SUBSCRIPTION",
       };
     },
   });

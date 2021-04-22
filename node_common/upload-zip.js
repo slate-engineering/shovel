@@ -267,13 +267,20 @@ export async function formMultipart(req, res, { user, bucketName, originalFileNa
 
   try {
     const newUpload = await refreshed.buckets.listIpfsPath(response.data);
-    data.size = newUpload.size;
-    data.unityGameConfig = unityGameConfig;
-    data.unityGameLoader = unityGameLoader;
+    data.data.size = newUpload.size;
+    if (unityGameConfig || unityGameLoader) {
+      data.data.unity = {
+        config: unityGameConfig,
+        loader: unityGameLoader,
+      };
+    }
 
     gameRootUrl = newUpload.cid;
 
-    ScriptLogging.message(POST, `${data.name} : ${Strings.bytesToSize(data.size)} uploaded`);
+    ScriptLogging.message(
+      POST,
+      `${data.filename} : ${Strings.bytesToSize(data.data.size)} uploaded`
+    );
   } catch (e) {
     Social.sendTextileSlackMessage({
       file: "/node_common/upload.js",
@@ -290,6 +297,8 @@ export async function formMultipart(req, res, { user, bucketName, originalFileNa
     };
   }
 
+  data.cid = gameRootUrl.replace("/ipfs/", "");
+
   ScriptLogging.message(POST, `SUCCESS !!!`);
-  return { decorator: "UPLOAD_SUCCESS", data, ipfs: gameRootUrl };
+  return { decorator: "UPLOAD_SUCCESS", data };
 }
