@@ -181,10 +181,15 @@ export async function formMultipart(req, res, { user, bucketName, originalFileNa
                   throw new Error(e.message);
                 });
 
+              const isUnityLoaderFile = (fileName) =>
+                [/build\/unityloader.js/i, /build(.*)\.loader.js/i].some((item) =>
+                  item.test(fileName)
+                );
+
               // NOTE(daniel): detect unity game config file and loader
               if (/build(.*).json/i.test(fileName)) {
                 unityGameConfig = fileName;
-              } else if (/build\/unityloader.js/i.test(fileName)) {
+              } else if (isUnityLoaderFile(fileName)) {
                 unityGameLoader = fileName;
               }
 
