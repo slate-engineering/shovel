@@ -3,10 +3,10 @@ import { v4 as uuid } from "uuid";
 export const createLocalDataIncomplete = ({ type, size, name }, id = null) => {
   return {
     id: !id ? uuid() : id,
-    filename: name,
+    filename: name.substring(0, 255),
     createdAt: new Date(),
     data: {
-      name: name,
+      name: name.substring(0, 255),
       type: type,
       size: size,
     },
