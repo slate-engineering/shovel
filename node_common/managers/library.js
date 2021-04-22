@@ -1,6 +1,6 @@
 import { v4 as uuid } from "uuid";
 
-export const createLocalDataIncomplete = ({ type, size, name }, id = null) => {
+export const createLocalDataIncomplete = ({ type, size, name = "" }, id = null) => {
   return {
     id: !id ? uuid() : id,
     filename: name.substring(0, 255),
