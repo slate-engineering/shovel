@@ -4,7 +4,14 @@ import { runQuery } from "~/node_common/data/utilities";
 
 //NOTE(martina): remember to include an ownerId for the file
 export default async (files) => {
-  const cleanedFiles = files.map((file) => Serializers.cleanFile(file));
+  let inputFiles;
+  if (Array.isArray(files)) {
+    inputFiles = files;
+  } else {
+    inputFiles = [files];
+  }
+
+  const cleanedFiles = inputFiles.map((file) => Serializers.cleanFile(file));
 
   return await runQuery({
     label: "CREATE_FILE",
