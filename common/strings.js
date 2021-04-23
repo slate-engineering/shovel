@@ -35,6 +35,10 @@ export const bytesToSize = (bytes, decimals = 2) => {
   return `${(bytes / Math.pow(k, i)).toFixed(dm)} ${sizes[i]}`;
 };
 
+export const getURLfromCID = (cid) => {
+  return `${Constants.gateways.ipfs}/${cid}`;
+};
+
 export const getKey = (text) => {
   if (isEmpty(text)) {
     return null;
