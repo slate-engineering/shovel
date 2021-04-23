@@ -7,23 +7,23 @@ import * as Upload from "~/node_common/upload";
 export default async (req, res) => {
   if (Strings.isEmpty(req.headers.authorization)) {
     return res.status(404).send({
-      decorator: "SERVER_API_KEY_MISSING",
+      decorator: "API_KEY_MISSING",
       error: true,
     });
   }
 
-  let slate = await Data.getSlateById({ id: req.params.slate });
+  let slate = await Data.getSlateById({ id: req.params.slate, includeFiles: true, sanitize: true });
 
   if (!slate) {
     return res.status(404).send({
-      decorator: "V1_SERVER_UPLOAD_SLATE_NOT_FOUND",
+      decorator: "SLATE_NOT_FOUND",
       error: true,
     });
   }
 
   if (slate.error) {
     return res.status(500).send({
-      decorator: "V1_SERVER_UPLOAD_SLATE_NOT_FOUND",
+      decorator: "SLATE_NOT_FOUND",
       error: true,
     });
   }
@@ -35,14 +35,14 @@ export default async (req, res) => {
 
   if (!key) {
     return res.status(403).send({
-      decorator: "V1_SERVER_API_KEY_NOT_FOUND",
+      decorator: "API_KEY_NOT_FOUND",
       error: true,
     });
   }
 
   if (key.error) {
     return res.status(500).send({
-      decorator: "V1_SERVER_API_KEY_NOT_FOUND",
+      decorator: "API_KEY_NOT_FOUND",
       error: true,
     });
   }
@@ -50,6 +50,20 @@ export default async (req, res) => {
   const user = await Data.getUserById({
     id: key.ownerId,
   });
+
+  if (!user) {
+    return res.status(404).send({ decorator: "API_KEY_CORRESPONDING_USER_NOT_FOUND", error: true });
+  }
+
+  if (user.error) {
+    return res.status(404).send({ decorator: "API_KEY_CORRESPONDING_USER_NOT_FOUND", error: true });
+  }
+
+  if (user.id !== slate.ownerId) {
+    return res
+      .status(400)
+      .send({ decorator: "NOT_SLATE_OWNER_UPLOAD_TO_SLATE_NOT_ALLOWED", error: true });
+  }
 
   let uploadResponse = null;
   try {
@@ -61,7 +75,7 @@ export default async (req, res) => {
   }
 
   if (!uploadResponse) {
-    return res.status(413).send({ decorator: "V1_SERVER_API_UPLOAD_ERROR", error: true });
+    return res.status(413).send({ decorator: "UPLOAD_FAILED", error: true });
   }
 
   if (uploadResponse.error) {
@@ -76,18 +90,16 @@ export default async (req, res) => {
 
   const duplicateFile = await Data.getFileByCid({ ownerId: user.id, cid: data.cid });
 
-  if (duplicateFile) {
-    return res.status(400).send({ decorator: "V1_SERVER_UPLOAD_FILE_DUPLICATE", error: true });
-  }
+  if (!duplicateFile) {
+    const response = await Data.createFile({ ...data, ownerId: user.id });
 
-  const response = await Data.createFile({ ...data, ownerId: user.id });
+    if (!response) {
+      return res.status(404).send({ decorator: "CREATE_FILE_FAILED", error: true });
+    }
 
-  if (!response) {
-    return res.status(404).send({ decorator: "V1_SERVER_UPLOAD_FAILED", error: true });
-  }
-
-  if (response.error) {
-    return res.status(500).send({ decorator: response.decorator, error: response.error });
+    if (response.error) {
+      return res.status(500).send({ decorator: response.decorator, error: response.error });
+    }
   }
 
   let duplicateCids = await Data.getSlateFilesByCids({
@@ -102,11 +114,11 @@ export default async (req, res) => {
     });
 
     if (!addResponse) {
-      return res.status(404).send({ decorator: "V1_SERVER_SLATE_UPLOAD_FAILED", error: true });
+      return res.status(404).send({ decorator: "ADD_TO_SLATE_FAILED", error: true });
     }
 
     if (addResponse.error) {
-      return res.status(500).send({ decorator: response.decorator, error: response.error });
+      return res.status(500).send({ decorator: addResponse.decorator, error: addResponse.error });
     }
 
     if (slate.isPublic) {
@@ -121,9 +133,38 @@ export default async (req, res) => {
     }
   }
 
+  let reformattedData = {
+    ...data,
+    ...data.data,
+    data: null,
+  };
+
+  let reformattedObjects = slate.objects.map((file) => {
+    return {
+      ...file,
+      ...file.data,
+      data: null,
+      url: Strings.getURLfromCID(file.cid),
+    };
+  });
+
+  let reformattedSlate = {
+    id: slate.id,
+    updated_at: slate.updatedAt,
+    created_at: slate.createdAt,
+    slatename: slate.slatename,
+    data: {
+      name: slate.data.name,
+      public: slate.isPublic,
+      objects: reformattedObjects,
+      ownerId: slate.ownerId,
+      layouts: slate.data.layouts,
+    },
+  };
+
   return res.status(200).send({
-    decorator: "V1_UPLOAD_DATA_TO_SLATE",
-    data,
-    slate,
+    decorator: "V1_UPLOAD_TO_SLATE",
+    data: reformattedData,
+    slate: reformattedSlate,
   });
 };

@@ -8,7 +8,7 @@ import * as Upload from "~/node_common/upload";
 export default async (req, res) => {
   if (Strings.isEmpty(req.headers.authorization)) {
     return res.status(404).send({
-      decorator: "SERVER_API_KEY_MISSING",
+      decorator: "NO_API_KEY_PROVIDED",
       error: true,
     });
   }
@@ -20,14 +20,14 @@ export default async (req, res) => {
 
   if (!key) {
     return res.status(403).send({
-      decorator: "V1_SERVER_API_KEY_NOT_FOUND",
+      decorator: "API_KEY_NOT_FOUND",
       error: true,
     });
   }
 
   if (key.error) {
     return res.status(500).send({
-      decorator: "V1_SERVER_API_KEY_NOT_FOUND",
+      decorator: "API_KEY_NOT_FOUND",
       error: true,
     });
   }
@@ -35,6 +35,14 @@ export default async (req, res) => {
   const user = await Data.getUserById({
     id: key.ownerId,
   });
+
+  if (!user) {
+    return res.status(404).send({ decorator: "API_KEY_CORRESPONDING_USER_NOT_FOUND", error: true });
+  }
+
+  if (user.error) {
+    return res.status(404).send({ decorator: "API_KEY_CORRESPONDING_USER_NOT_FOUND", error: true });
+  }
 
   let uploadResponse = null;
   try {
@@ -46,7 +54,7 @@ export default async (req, res) => {
   }
 
   if (!uploadResponse) {
-    return res.status(413).send({ decorator: "V1_SERVER_API_UPLOAD_ERROR", error: true });
+    return res.status(413).send({ decorator: "UPLOAD_ERROR", error: true });
   }
 
   if (uploadResponse.error) {
@@ -62,13 +70,13 @@ export default async (req, res) => {
   const duplicateFile = await Data.getFileByCid({ ownerId: user.id, cid: data.cid });
 
   if (duplicateFile) {
-    return res.status(400).send({ decorator: "V1_SERVER_UPLOAD_FILE_DUPLICATE", error: true });
+    return res.status(400).send({ decorator: "DUPLICATE_FILE", error: true });
   }
 
   const response = await Data.createFile({ ...data, ownerId: user.id });
 
   if (!response) {
-    return res.status(404).send({ decorator: "V1_SERVER_UPLOAD_FAILED", error: true });
+    return res.status(404).send({ decorator: "CREATE_FILE_FAILED", error: true });
   }
 
   if (response.error) {
@@ -76,7 +84,7 @@ export default async (req, res) => {
   }
 
   return res.status(200).send({
-    decorator: "V1_UPLOAD_DATA_TO_SLATE",
+    decorator: "V2_UPLOAD",
     data,
   });
 };
