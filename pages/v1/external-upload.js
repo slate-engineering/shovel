@@ -66,6 +66,7 @@ export default async (req, res) => {
   }
 
   const { data } = uploadResponse;
+  let file = data;
 
   const duplicateFile = await Data.getFileByCid({ ownerId: user.id, cid: data.cid });
 
@@ -79,11 +80,13 @@ export default async (req, res) => {
     if (response.error) {
       return res.status(500).send({ decorator: response.decorator, error: response.error });
     }
+  } else {
+    file = duplicateFile;
   }
 
   let reformattedData = {
-    ...data,
-    ...data.data,
+    ...file,
+    ...file.data,
     data: null,
   };
 

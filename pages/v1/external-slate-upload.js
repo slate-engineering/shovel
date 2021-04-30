@@ -88,6 +88,8 @@ export default async (req, res) => {
 
   const { data } = uploadResponse;
 
+  let file = data;
+
   const duplicateFile = await Data.getFileByCid({ ownerId: user.id, cid: data.cid });
 
   if (!duplicateFile) {
@@ -100,6 +102,8 @@ export default async (req, res) => {
     if (response.error) {
       return res.status(500).send({ decorator: response.decorator, error: response.error });
     }
+  } else {
+    file = duplicateFile;
   }
 
   let duplicateCids = await Data.getSlateFilesByCids({
@@ -134,17 +138,17 @@ export default async (req, res) => {
   }
 
   let reformattedData = {
-    ...data,
-    ...data.data,
+    ...file,
+    ...file.data,
     data: null,
   };
 
-  let reformattedObjects = slate.objects.map((file) => {
+  let reformattedObjects = slate.objects.map((obj) => {
     return {
-      ...file,
-      ...file.data,
+      ...obj,
+      ...obj.data,
       data: null,
-      url: Strings.getURLfromCID(file.cid),
+      url: Strings.getURLfromCID(obj.cid),
     };
   });
 
