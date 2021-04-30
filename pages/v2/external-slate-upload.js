@@ -88,6 +88,8 @@ export default async (req, res) => {
 
   const { data } = uploadResponse;
 
+  let file = data;
+
   const duplicateFile = await Data.getFileByCid({ ownerId: user.id, cid: data.cid });
 
   if (!duplicateFile) {
@@ -100,6 +102,8 @@ export default async (req, res) => {
     if (response.error) {
       return res.status(500).send({ decorator: response.decorator, error: response.error });
     }
+  } else {
+    file = duplicateFile;
   }
 
   let duplicateCids = await Data.getSlateFilesByCids({
@@ -135,7 +139,7 @@ export default async (req, res) => {
 
   return res.status(200).send({
     decorator: "V2_UPLOAD_TO_SLATE",
-    data,
+    data: file,
     slate,
   });
 };
