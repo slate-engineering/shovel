@@ -69,18 +69,16 @@ export default async (req, res) => {
 
   const duplicateFile = await Data.getFileByCid({ ownerId: user.id, cid: data.cid });
 
-  if (duplicateFile) {
-    return res.status(400).send({ decorator: "DUPLICATE_FILE", error: true });
-  }
+  if (!duplicateFile) {
+    const response = await Data.createFile({ ...data, ownerId: user.id });
 
-  const response = await Data.createFile({ ...data, ownerId: user.id });
+    if (!response) {
+      return res.status(404).send({ decorator: "CREATE_FILE_FAILED", error: true });
+    }
 
-  if (!response) {
-    return res.status(404).send({ decorator: "CREATE_FILE_FAILED", error: true });
-  }
-
-  if (response.error) {
-    return res.status(500).send({ decorator: response.decorator, error: response.error });
+    if (response.error) {
+      return res.status(500).send({ decorator: response.decorator, error: response.error });
+    }
   }
 
   let reformattedData = {
