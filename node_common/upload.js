@@ -95,6 +95,7 @@ export async function formMultipart(req, res, { user, bucketName, originalFileNa
           try {
             await actionFn();
           } catch (e) {
+            console.log(`LOOK HERE: caught the error with message ${e.message} in upload.js`);
             ScriptLogging.error(SHOVEL, `${timeoutId} : queue.pause()`);
             singleConcurrencyQueue.pause();
 
@@ -151,6 +152,9 @@ export async function formMultipart(req, res, { user, bucketName, originalFileNa
                 },
               })
               .catch(function (e) {
+                console.log(
+                  `LOOK HERE: throwing error at spot 1 in upload.js with message ${e.message}`
+                );
                 throw new Error(e.message);
               });
 
@@ -187,6 +191,7 @@ export async function formMultipart(req, res, { user, bucketName, originalFileNa
 
       writableStream.on("error", function (e) {
         return _safeForcedSingleConcurrencyFn(() => {
+          console.log(`LOOK HERE: throwing error at spot 2 in upload.js with message ${e.message}`);
           throw new Error(e.message);
         }, rejectPromiseFn);
       });
