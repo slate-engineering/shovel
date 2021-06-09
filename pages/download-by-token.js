@@ -4,9 +4,9 @@ import Redis from "ioredis";
 import * as Environment from "~/node_common/environment";
 
 const redisClient = new Redis({
-  port: Environment.REDIS_PORT,
-  host: Environment.REDIS_HOST,
-  password: Environment.REDIS_PASSWORD,
+  port: Environment.DOWNLOAD_REDIS_PORT,
+  host: Environment.DOWNLOAD_REDIS_HOST,
+  password: Environment.DOWNLOAD_REDIS_PASSWORD,
 });
 
 const request = (link) => Request.get(link);
