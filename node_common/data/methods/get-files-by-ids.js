@@ -8,22 +8,7 @@ export default async ({ ids, sanitize = false, publicOnly = false }) => {
     queryFn: async (DB) => {
       let query;
       if (publicOnly) {
-        query = await DB.select(
-          "files.id",
-          "files.ownerId",
-          "files.cid",
-          "files.isPublic",
-          "files.filename",
-          "files.data"
-        )
-          .from("files")
-          .leftJoin("slate_files", "slate_files.fileId", "=", "files.id")
-          .leftJoin("slates", "slates.id", "=", "slate_files.slateId")
-          .whereIn("files.id", ids)
-          .where("files.isPublic", true)
-          .orWhereIn("files.id", ids)
-          .andWhere("slates.isPublic", true)
-          .groupBy("files.id");
+        query = await DB.select("*").from("files").whereIn("id", ids).where("isPublic", true);
       } else {
         query = await DB.select("*").from("files").whereIn("id", ids);
       }

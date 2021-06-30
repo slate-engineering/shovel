@@ -1,3 +1,4 @@
+import * as Logging from "~/common/logging";
 import * as Serializers from "~/node_common/serializers";
 
 import { runQuery } from "~/node_common/data/utilities";
@@ -8,19 +9,7 @@ export default async ({ sanitize = false, publicOnly = false } = {}) => {
     queryFn: async (DB) => {
       let files;
       if (publicOnly) {
-        files = await DB.select(
-          "files.id",
-          "files.ownerId",
-          "files.cid",
-          "files.isPublic",
-          "files.data"
-        )
-          .from("files")
-          .leftJoin("slate_files", "slate_files.fileId", "files.id")
-          .leftJoin("slates", "slate_files.slateId", "slates.id")
-          .where("slates.isPublic", true)
-          .orWhere("files.isPublic", true)
-          .groupBy("files.id");
+        files = await DB.select("*").from("files").where("isPublic", true);
       } else {
         files = await DB.select("*").from("files");
       }
@@ -36,7 +25,7 @@ export default async ({ sanitize = false, publicOnly = false } = {}) => {
       return JSON.parse(JSON.stringify(files));
     },
     errorFn: async (e) => {
-      console.log({
+      Logging.error({
         error: true,
         decorator: "GET_EVERY_FILE",
       });

@@ -1,4 +1,5 @@
 import * as Serializers from "~/node_common/serializers";
+import * as Constants from "~/node_common/constants";
 
 import { runQuery } from "~/node_common/data/utilities";
 
@@ -19,14 +20,7 @@ export default async ({ id, sanitize = false, includeFiles = false }) => {
       let query;
 
       if (includeFiles) {
-        query = await DB.select(
-          "slates.id",
-          "slates.slatename",
-          "slates.data",
-          "slates.ownerId",
-          "slates.isPublic",
-          slateFiles()
-        )
+        query = await DB.select(...Constants.slateProperties, slateFiles())
           .from("slates")
           .leftJoin("slate_files", "slate_files.slateId", "=", "slates.id")
           .leftJoin("files", "slate_files.fileId", "=", "files.id")
@@ -34,7 +28,7 @@ export default async ({ id, sanitize = false, includeFiles = false }) => {
           .groupBy("slates.id")
           .first();
       } else {
-        query = await DB.select("id", "slatename", "data", "ownerId", "isPublic")
+        query = await DB.select(...Constants.slateProperties)
           .from("slates")
           .where({ id })
           .first();

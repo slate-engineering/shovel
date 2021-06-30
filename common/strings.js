@@ -39,6 +39,10 @@ export const getURLfromCID = (cid) => {
   return `${Constants.gateways.ipfs}/${cid}`;
 };
 
+export const getFilenameFromURL = (url) => {
+  return url.split("/").pop().split(/[?#]/).shift();
+};
+
 export const getKey = (text) => {
   if (isEmpty(text)) {
     return null;

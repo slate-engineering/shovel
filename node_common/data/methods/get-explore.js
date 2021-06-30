@@ -1,3 +1,5 @@
+import * as Logging from "~/common/logging";
+
 import { runQuery } from "~/node_common/data/utilities";
 
 export default async ({ earliestTimestamp, latestTimestamp }) => {
@@ -23,18 +25,19 @@ export default async ({ earliestTimestamp, latestTimestamp }) => {
           "activity.id",
           "activity.type",
           "activity.createdAt",
-          users(),
-          slates(),
+          "activity.slateId",
+          // users(),
+          // slates(),
           files()
         )
           .from("activity")
-          .join("users", "users.id", "=", "activity.ownerId")
+          // .join("users", "users.id", "=", "activity.ownerId")
           .leftJoin("files", "files.id", "=", "activity.fileId")
-          .leftJoin("slates", "slates.id", "=", "activity.slateId")
+          // .leftJoin("slates", "slates.id", "=", "activity.slateId")
           .where("activity.createdAt", "<", date.toISOString())
           .where("activity.type", "CREATE_SLATE_OBJECT")
           .orderBy("activity.createdAt", "desc")
-          .limit(100);
+          .limit(96);
       } else if (latestTimestamp) {
         //NOTE(martina): for fetching new updates since the last time they loaded
         let date = new Date(latestTimestamp);
@@ -43,35 +46,37 @@ export default async ({ earliestTimestamp, latestTimestamp }) => {
           "activity.id",
           "activity.type",
           "activity.createdAt",
-          users(),
-          slates(),
+          "activity.slateId",
+          // users(),
+          // slates(),
           files()
         )
           .from("activity")
-          .join("users", "users.id", "=", "activity.ownerId")
+          // .join("users", "users.id", "=", "activity.ownerId")
           .leftJoin("files", "files.id", "=", "activity.fileId")
-          .leftJoin("slates", "slates.id", "=", "activity.slateId")
+          // .leftJoin("slates", "slates.id", "=", "activity.slateId")
           .where("activity.createdAt", ">", date.toISOString())
           .where("activity.type", "CREATE_SLATE_OBJECT")
           .orderBy("activity.createdAt", "desc")
-          .limit(100);
+          .limit(96);
       } else {
         //NOTE(martina): for the first fetch they make, when they have not loaded any explore events yet
         query = await DB.select(
           "activity.id",
           "activity.type",
           "activity.createdAt",
-          users(),
-          slates(),
+          "activity.slateId",
+          // users(),
+          // slates(),
           files()
         )
           .from("activity")
-          .join("users", "users.id", "=", "activity.ownerId")
+          // .join("users", "users.id", "=", "activity.ownerId")
           .leftJoin("files", "files.id", "=", "activity.fileId")
-          .leftJoin("slates", "slates.id", "=", "activity.slateId")
+          // .leftJoin("slates", "slates.id", "=", "activity.slateId")
           .where("activity.type", "CREATE_SLATE_OBJECT")
           .orderBy("activity.createdAt", "desc")
-          .limit(100);
+          .limit(96);
       }
 
       if (!query || query.error) {
@@ -81,7 +86,7 @@ export default async ({ earliestTimestamp, latestTimestamp }) => {
       return JSON.parse(JSON.stringify(query));
     },
     errorFn: async (e) => {
-      console.log({
+      Logging.error({
         error: true,
         decorator: "GET_EXPLORE",
       });

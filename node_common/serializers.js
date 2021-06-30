@@ -11,11 +11,16 @@ export const sanitizeUser = (entity) => {
     username: entity.username,
     slates: entity.slates, //NOTE(martina): this is not in the database. It is added after
     library: entity.library, //NOTE(martina): this is not in the database. It is added after
+    twitterId: entity.twitterId,
+    email: entity.email,
     data: {
       name: entity.data?.name,
       photo: entity.data?.photo,
       body: entity.data?.body,
     },
+    fileCount: entity.fileCount,
+    followerCount: entity.followerCount,
+    slateCount: entity.slateCount,
   };
 };
 
@@ -34,6 +39,8 @@ export const sanitizeSlate = (entity) => {
       layouts: entity.data?.layouts,
       tags: entity.data?.tags,
     },
+    fileCount: entity.fileCount,
+    subscriberCount: entity.subscriberCount,
   };
 };
 
@@ -44,6 +51,7 @@ export const sanitizeFile = (entity) => {
     ownerId: entity.ownerId,
     isPublic: entity.isPublic,
     filename: entity.filename,
+    createdAt: entity.createdAt,
     data: {
       type: entity.data?.type,
       name: entity.data?.name,
@@ -53,11 +61,13 @@ export const sanitizeFile = (entity) => {
       author: entity.data?.author,
       blurhash: entity.data?.blurhash,
       coverImage: entity.data?.coverImage,
-      downloads: entity.data?.downloads, //NOTE(martina): newly added
       tags: entity.data?.tags, //NOTE(martina): newly added
       unity: entity.data?.unity, //NOTE(martina): newly added
       link: entity.data?.link, //NOTE(martina): newly added
     },
+    likeCount: entity.likeCount,
+    downloadCount: entity.downloadCount,
+    saveCount: entity.saveCount,
   };
 };
 
@@ -73,6 +83,8 @@ export const cleanUser = (entity) => {
     salt: entity.salt,
     password: entity.password,
     email: entity.email,
+    twitterId: entity.twitterId,
+    authVersion: entity.authVersion,
     data: entity.data,
     // data: {
     //   name: entity.data?.name,
@@ -82,7 +94,6 @@ export const cleanUser = (entity) => {
     //   settings: entity.data?.settings,
     //   onboarding: entity.data?.onboarding,
     //   status: entity.data?.status,
-    //   library: entity.data?.library, //MIGRATION: take this out after
     // },
   };
 };
@@ -102,7 +113,6 @@ export const cleanSlate = (entity) => {
     //   preview: entity.data?.preview,
     //   layouts: entity.data?.layouts,
     //   tags: entity.data?.tags,
-    //   objects: entity.data?.objects, //MIGRATION: take this out after
     // },
   };
 };

@@ -1,4 +1,6 @@
+import * as Logging from "~/common/logging";
 import * as Serializers from "~/node_common/serializers";
+import * as Constants from "~/node_common/constants";
 
 import { runQuery } from "~/node_common/data/utilities";
 
@@ -17,11 +19,11 @@ export default async ({ sanitize = false, includeFiles = false } = {}) => {
 
       let users;
       if (includeFiles) {
-        users = await DB.select("users.id", "users.username", "users.data", userFiles())
+        users = await DB.select(...Constants.userProperties, userFiles())
           .from("users")
           .leftJoin("files", "files.ownerId", "users.id");
       } else {
-        users = await DB.select("*").from("users");
+        users = await DB.select(...Constants.userProperties).from("users");
       }
 
       if (!users || users.error) {
@@ -35,7 +37,7 @@ export default async ({ sanitize = false, includeFiles = false } = {}) => {
       return JSON.parse(JSON.stringify(users));
     },
     errorFn: async (e) => {
-      console.log({
+      Logging.error({
         error: true,
         decorator: "GET_EVERY_USER",
       });

@@ -4,11 +4,6 @@ export default async ({ ownerId, slateId, userId }) => {
   return await runQuery({
     label: "CREATE_SUBSCRIPTION",
     queryFn: async (DB) => {
-      console.log({
-        ownerId,
-        slateId,
-        userId,
-      });
       const query = await DB.insert({
         ownerId,
         slateId,
@@ -16,6 +11,28 @@ export default async ({ ownerId, slateId, userId }) => {
       })
         .into("subscriptions")
         .returning("*");
+
+      if (slateId) {
+        const activityQuery = await DB.insert({
+          ownerId,
+          slateId,
+          type: "SUBSCRIBE_SLATE",
+        }).into("activity");
+
+        let summaryQuery = await DB.from("slates")
+          .where({ id: slateId })
+          .increment("subscriberCount", 1);
+      } else if (userId) {
+        const activityQuery = await DB.insert({
+          ownerId,
+          userId,
+          type: "SUBSCRIBE_USER",
+        }).into("activity");
+
+        let summaryQuery = await DB.from("users")
+          .where({ id: userId })
+          .increment("followerCount", 1);
+      }
 
       const index = query ? query.pop() : null;
       return JSON.parse(JSON.stringify(index));
