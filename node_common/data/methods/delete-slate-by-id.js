@@ -10,9 +10,18 @@ export default async ({ id }) => {
 
       const activity = await DB("activity").where({ slateId: id }).del();
 
-      const slates = await DB("slates").where({ id }).del();
+      const slates = await DB("slates").where({ id }).del().returning("*");
 
-      return 1 === slates;
+      if (slates) {
+        const slate = slates.pop();
+        if (slate.isPublic) {
+          const summaryQuery = await DB.from("users")
+            .where("id", slate.ownerId)
+            .decrement("slateCount", 1);
+        }
+      }
+
+      return slates;
     },
     errorFn: async (e) => {
       return {

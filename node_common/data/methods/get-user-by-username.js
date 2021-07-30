@@ -1,4 +1,5 @@
 import * as Serializers from "~/node_common/serializers";
+import * as Constants from "~/node_common/constants";
 
 import { runQuery } from "~/node_common/data/utilities";
 
@@ -64,33 +65,30 @@ export default async ({ username, sanitize = false, includeFiles = false, public
           //   .first();
           query = await DB.select("*").from("users").where({ username }).first();
 
-          const id = query.id;
+          const id = query?.id;
 
-          let library = await DB.select(
-            "files.id",
-            "files.ownerId",
-            "files.cid",
-            "files.isPublic",
-            "files.filename",
-            "files.data"
-          )
-            .from("files")
-            .leftJoin("slate_files", "slate_files.fileId", "=", "files.id")
-            .leftJoin("slates", "slate_files.slateId", "=", "slates.id")
-            .where({ "files.ownerId": id, "slates.isPublic": true })
-            .orWhere({ "files.ownerId": id, "files.isPublic": true })
-            .orderBy("files.createdAt", "desc")
-            .groupBy("files.id");
+          if (id) {
+            let library = await DB.select(...Constants.fileProperties)
+              .from("files")
+              .leftJoin("slate_files", "slate_files.fileId", "=", "files.id")
+              .leftJoin("slates", "slate_files.slateId", "=", "slates.id")
+              // .where({ "files.ownerId": id, "slates.isPublic": true })
+              // .orWhere({ "files.ownerId": id, "files.isPublic": true })
+              .whereRaw("?? = ? and (?? = ? or ?? = ?)", [
+                "files.ownerId",
+                id,
+                "files.isPublic",
+                true,
+                "slates.isPublic",
+                true,
+              ])
+              .orderBy("files.createdAt", "desc")
+              .groupBy("files.id");
 
-          query.library = library;
+            query.library = library;
+          }
         } else {
-          query = await DB.select(
-            "users.id",
-            "users.username",
-            "users.data",
-            "users.email",
-            userFiles()
-          )
+          query = await DB.select(...Constants.userProperties, userFiles())
             .from("users")
             .where({ "users.username": username })
             .leftJoin("files", "files.ownerId", "users.id")

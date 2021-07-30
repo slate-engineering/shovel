@@ -1,3 +1,5 @@
+import * as Logging from "~/common/logging";
+
 import { runQuery } from "~/node_common/data/utilities";
 
 export default async ({ userId }) => {
@@ -13,7 +15,7 @@ export default async ({ userId }) => {
       return JSON.parse(JSON.stringify(query));
     },
     errorFn: async (e) => {
-      console.log({
+      Logging.error({
         error: true,
         decorator: "GET_API_KEYS_BY_USER_ID",
       });

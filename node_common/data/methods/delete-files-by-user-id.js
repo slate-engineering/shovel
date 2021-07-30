@@ -34,6 +34,8 @@ export default async ({ ownerId }) => {
 
       const activity = await DB("activity").whereIn("fileId", fileIds).del();
 
+      const likes = await DB("likes").whereIn("fileId", fileIds).del();
+
       const files = await DB("files").whereIn("id", fileIds).del();
 
       return true;

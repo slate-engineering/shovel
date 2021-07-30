@@ -93,7 +93,7 @@ export default async (req, res) => {
   const duplicateFile = await Data.getFileByCid({ ownerId: user.id, cid: data.cid });
 
   if (!duplicateFile) {
-    const response = await Data.createFile({ ...data, ownerId: user.id });
+    const response = await Data.createFile({ files: data, owner: user });
 
     if (!response) {
       return res.status(404).send({ decorator: "CREATE_FILE_FAILED", error: true });
@@ -113,8 +113,9 @@ export default async (req, res) => {
 
   if (!duplicateCids.length) {
     const addResponse = await Data.createSlateFiles({
-      slateId: slate.id,
-      fileId: data.id,
+      owner: user,
+      slate,
+      files: [data],
     });
 
     if (!addResponse) {

@@ -9,7 +9,14 @@ export default async ({ slateId, ids }) => {
         .whereIn("fileId", ids)
         .del();
 
-      const activity = await DB("activity").whereIn("fileId", ids).where("slateId", slateId).del();
+      const activityQuery = await DB("activity")
+        .where({ slateId, type: "CREATE_SLATE_OBJECT" })
+        .whereIn("fileId", ids)
+        .del();
+
+      const summaryQuery = await DB("slates")
+        .where("id", slateId)
+        .decrement("fileCount", ids.length);
 
       return true;
     },

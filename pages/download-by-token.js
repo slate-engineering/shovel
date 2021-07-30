@@ -1,13 +1,8 @@
 import archiver from "archiver";
 import Request from "request";
-import Redis from "ioredis";
-import * as Environment from "~/node_common/environment";
+import redisClient from "~/node_common/redis";
 
-const redisClient = new Redis({
-  port: Environment.DOWNLOAD_REDIS_PORT,
-  host: Environment.DOWNLOAD_REDIS_HOST,
-  password: Environment.DOWNLOAD_REDIS_PASSWORD,
-});
+import * as Environment from "~/node_common/environment";
 
 const request = (link) => Request.get(link);
 

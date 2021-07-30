@@ -14,6 +14,28 @@ export default async ({ ownerId, slatename, isPublic, data = {} }) => {
         .returning("*");
 
       const index = query ? query.pop() : null;
+
+      if (index) {
+        if (isPublic) {
+          const activityQuery = await DB.insert({
+            ownerId,
+            slateId: index.id,
+            type: "CREATE_SLATE",
+          }).into("activity");
+
+          const summaryQuery = await DB.from("users")
+            .where("id", ownerId)
+            .increment("slateCount", 1);
+        } else {
+          const activityQuery = await DB.insert({
+            ownerId,
+            slateId: index.id,
+            type: "CREATE_SLATE",
+            ignore: true,
+          }).into("activity");
+        }
+      }
+
       return JSON.parse(JSON.stringify(index));
     },
     errorFn: async (e) => {
