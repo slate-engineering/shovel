@@ -5,6 +5,8 @@ import * as Strings from "~/common/strings";
 import * as ScriptLogging from "~/node_common/script-logging";
 import * as Upload from "~/node_common/upload";
 
+const SHOVEL = "SHOVEL          ";
+
 export default async (req, res) => {
   if (Strings.isEmpty(req.headers.authorization)) {
     return res.status(404).send({

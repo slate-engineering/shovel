@@ -5,6 +5,8 @@ import * as Strings from "~/common/strings";
 import * as ScriptLogging from "~/node_common/script-logging";
 import * as UploadByUrl from "~/node_common/upload-by-url";
 
+const SHOVEL = "SHOVEL          ";
+
 export default async (req, res) => {
   const url = req.body.data?.url;
   if (Strings.isEmpty(url)) {
@@ -80,7 +82,7 @@ export default async (req, res) => {
   const duplicateFile = await Data.getFileByCid({ ownerId: user.id, cid: file.cid });
 
   if (!duplicateFile) {
-    const response = await Data.createFile({ owner: user, files: [file] });
+    const response = await Data.createFile({ owner: user, files: file });
 
     if (!response) {
       return res.status(404).send({ decorator: "CREATE_FILE_FAILED", error: true });

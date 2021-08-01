@@ -11,6 +11,8 @@ import APIRouteUploadZip from "~/pages/upload-zip";
 import APICreateZipToken from "~/pages/create-zip-token";
 import APIDownloadByToken from "~/pages/download-by-token";
 import APIRouteUploadUrl from "~/pages/upload-by-url";
+import APIRouteUploadCidExternalV2 from "~/pages/v2/external-upload-by-cid";
+import APIRouteUploadUrlExternalV2 from "~/pages/v2/external-upload-by-url";
 
 import express from "express";
 import cors from "cors";
@@ -47,6 +49,18 @@ server.post("/api/v2/public", async (req, res) => {
   return await APIRouteUploadExternalV2(req, res);
 });
 
+server.post("/api/v2/public/cid", async (req, res) => {
+  req.setTimeout(0);
+
+  return await APIRouteUploadCidExternalV2(req, res);
+});
+
+server.post("/api/v2/public/url", async (req, res) => {
+  req.setTimeout(0);
+
+  return await APIRouteUploadUrlExternalV2(req, res);
+});
+
 server.post("/api/v2/public/:slate", async (req, res) => {
   req.setTimeout(0);
 
@@ -54,8 +68,6 @@ server.post("/api/v2/public/:slate", async (req, res) => {
 });
 
 server.post("/api/data/url", async (req, res) => {
-  console.log("made it into here");
-  console.log(req.body);
   req.setTimeout(0);
 
   return await APIRouteUploadUrl(req, res);

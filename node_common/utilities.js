@@ -62,6 +62,15 @@ export const setupWithThread = async ({ buckets }) => {
   return buckets;
 };
 
+export const addExistingCIDToData = async ({ buckets, key, path, cid }) => {
+  try {
+    await buckets.setPath(key, path || "/", cid);
+    return true;
+  } catch (e) {
+    return false;
+  }
+};
+
 // NOTE(jim): Requires @textile/hub
 export const getBucketAPIFromUserToken = async ({ user, bucketName, encrypted = false }) => {
   const token = user.data.tokens.api;

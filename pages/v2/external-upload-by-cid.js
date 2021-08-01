@@ -3,11 +3,20 @@ import * as Constants from "~/node_common/constants";
 import * as LibraryManager from "~/node_common/managers/library";
 import * as Strings from "~/common/strings";
 import * as ScriptLogging from "~/node_common/script-logging";
-import * as Upload from "~/node_common/upload";
+import * as UploadByCid from "~/node_common/upload-by-cid";
 
 const SHOVEL = "SHOVEL          ";
 
 export default async (req, res) => {
+  const cid = req.body.data?.cid;
+
+  if (Strings.isEmpty(cid)) {
+    return res.status(400).json({
+      decorator: "NO_CID_PROVIDED",
+      error: true,
+    });
+  }
+
   if (Strings.isEmpty(req.headers.authorization)) {
     return res.status(404).send({
       decorator: "NO_API_KEY_PROVIDED",
@@ -46,54 +55,50 @@ export default async (req, res) => {
     return res.status(404).send({ decorator: "API_KEY_CORRESPONDING_USER_NOT_FOUND", error: true });
   }
 
+  const duplicateFile = await Data.getFileByCid({ ownerId: user.id, cid });
+  if (duplicateFile) {
+    return res.status(200).send({
+      decorator: "V2_UPLOAD",
+      data: duplicateFile,
+    });
+  }
+
   let uploadResponse = null;
   try {
-    uploadResponse = await Upload.formMultipart(req, res, {
+    uploadResponse = await UploadByCid.upload(req, res, {
       user,
+      cid,
     });
   } catch (e) {
     ScriptLogging.error(SHOVEL, e.message);
   }
 
   if (!uploadResponse) {
-    return res.status(413).send({ decorator: "UPLOAD_ERROR", error: true });
+    return res.status(400).send({ decorator: "UPLOAD_ERROR", error: true });
   }
 
   if (uploadResponse.error) {
     ScriptLogging.error(SHOVEL, uploadResponse.message);
-    return res.status(413).send({
+    return res.status(400).send({
       decorator: uploadResponse.decorator,
       error: uploadResponse.error,
     });
   }
 
-  const { data } = uploadResponse;
-  let file = data;
+  const { data: file } = uploadResponse;
 
-  const duplicateFile = await Data.getFileByCid({ ownerId: user.id, cid: data.cid });
+  const response = await Data.createFile({ owner: user, files: [file] });
 
-  if (!duplicateFile) {
-    const response = await Data.createFile({ files: data, owner: user });
-
-    if (!response) {
-      return res.status(404).send({ decorator: "CREATE_FILE_FAILED", error: true });
-    }
-
-    if (response.error) {
-      return res.status(500).send({ decorator: response.decorator, error: response.error });
-    }
-  } else {
-    file = duplicateFile;
+  if (!response) {
+    return res.status(404).send({ decorator: "CREATE_FILE_FAILED", error: true });
   }
 
-  let reformattedData = {
-    ...file,
-    ...file.data,
-    data: null,
-  };
+  if (response.error) {
+    return res.status(500).send({ decorator: response.decorator, error: true });
+  }
 
   return res.status(200).send({
-    decorator: "V1_UPLOAD",
-    data: reformattedData,
+    decorator: "V2_UPLOAD",
+    data: response,
   });
 };

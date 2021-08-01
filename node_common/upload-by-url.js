@@ -5,9 +5,6 @@ import * as NodeConstants from "~/node_common/constants";
 import * as ScriptLogging from "~/node_common/script-logging";
 import * as Strings from "~/common/strings";
 
-import AbortController from "abort-controller";
-import BusBoyConstructor from "busboy";
-import Queue from "p-queue";
 import fetch from "node-fetch";
 import fs from "fs";
 
@@ -43,7 +40,10 @@ export async function upload(req, res, { url, user, bucketName }) {
     return new Promise((resolve, reject) => {
       fetch(url).then((r) => {
         data.data.type = r.headers.get("content-type");
-        data.data.size = r.headers.get("content-length");
+        let size = r.headers.get("content-length");
+        if (size) {
+          data.data.size = size;
+        }
 
         const destination = fs.createWriteStream(location);
 
@@ -68,6 +68,11 @@ export async function upload(req, res, { url, user, bucketName }) {
   } catch (e) {
     ScriptLogging.error(SHOVEL, e.message);
     return e;
+  }
+
+  if (!data.data.size) {
+    let fileStats = fs.statSync(location);
+    data.data.size = fileStats.size;
   }
 
   let dataPath = null;
@@ -135,14 +140,14 @@ export async function upload(req, res, { url, user, bucketName }) {
   } catch (e) {
     ScriptLogging.error(SHOVEL, e.message);
     return e;
+  } finally {
+    fs.unlink(location, (e) => {
+      if (e) {
+        ScriptLogging.error(SHOVEL, `Error while deleting ${location}: ${e.message}`);
+      }
+      ScriptLogging.message(SHOVEL, `${location} was deleted`);
+    });
   }
-
-  fs.unlink(location, (e) => {
-    if (e) {
-      ScriptLogging.error(SHOVEL, `Error while deleting ${location}: ${e.message}`);
-    }
-    ScriptLogging.message(SHOVEL, `${location} was deleted`);
-  });
 
   data.cid = response.data.replace("/ipfs/", "");
 
