@@ -9,6 +9,8 @@ const SHOVEL = "SHOVEL          ";
 
 export default async (req, res) => {
   const url = req.body.data?.url;
+  const filename = req.body.data?.filename;
+
   if (Strings.isEmpty(url)) {
     return res.status(400).json({
       decorator: "SERVER_URL_MISSING",
@@ -57,6 +59,7 @@ export default async (req, res) => {
   let uploadResponse = null;
   try {
     uploadResponse = await UploadByUrl.upload(req, res, {
+      filename,
       user,
       url,
     });

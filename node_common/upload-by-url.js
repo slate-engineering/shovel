@@ -13,7 +13,7 @@ const SHOVEL = "RENDER->TEXTILE ";
 const POST = "POST PROCESS    ";
 const HIGH_WATER_MARK = 1024 * 1024 * 3;
 
-export async function upload(req, res, { url, user, bucketName }) {
+export async function upload(req, res, { filename, url, user, bucketName }) {
   let { buckets, bucketKey, bucketRoot } = await Utilities.getBucketAPIFromUserToken({
     user,
     bucketName,
@@ -29,9 +29,8 @@ export async function upload(req, res, { url, user, bucketName }) {
     };
   }
 
-  let filename = Strings.getFilenameFromURL(url);
   let data = LibraryManager.createLocalDataIncomplete({
-    name: filename,
+    name: filename || Strings.getFilenameFromURL(url) || "unnamed_file",
   });
 
   const location = `/tmp/${data.id}`;
@@ -42,7 +41,7 @@ export async function upload(req, res, { url, user, bucketName }) {
         data.data.type = r.headers.get("content-type");
         let size = r.headers.get("content-length");
         if (size) {
-          data.data.size = size;
+          data.data.size = parseInt(size);
         }
 
         const destination = fs.createWriteStream(location);
@@ -51,14 +50,16 @@ export async function upload(req, res, { url, user, bucketName }) {
         r.body.on("end", () => {
           ScriptLogging.message(SHOVEL, `Finished writing to disk at ${location}`);
           resolve({ path: location });
+          return;
         });
-        r.body.on("error", (e) =>
+        r.body.on("error", (e) => {
           reject({
             error: true,
             decorator: "UPLOAD_WRITE_TO_DISK_ERROR",
             message: `Error while writing to disk: ${e}`,
-          })
-        );
+          });
+          return;
+        });
       });
     });
   };

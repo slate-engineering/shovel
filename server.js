@@ -49,13 +49,13 @@ server.post("/api/v2/public", async (req, res) => {
   return await APIRouteUploadExternalV2(req, res);
 });
 
-server.post("/api/v2/public/cid", async (req, res) => {
+server.post("/api/v2/public/upload-by-cid", async (req, res) => {
   req.setTimeout(0);
 
   return await APIRouteUploadCidExternalV2(req, res);
 });
 
-server.post("/api/v2/public/url", async (req, res) => {
+server.post("/api/v2/public/upload-by-url", async (req, res) => {
   req.setTimeout(0);
 
   return await APIRouteUploadUrlExternalV2(req, res);

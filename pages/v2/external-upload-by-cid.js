@@ -9,6 +9,7 @@ const SHOVEL = "SHOVEL          ";
 
 export default async (req, res) => {
   const cid = req.body.data?.cid;
+  const filename = req.body.data?.filename;
 
   if (Strings.isEmpty(cid)) {
     return res.status(400).json({
@@ -66,6 +67,7 @@ export default async (req, res) => {
   let uploadResponse = null;
   try {
     uploadResponse = await UploadByCid.upload(req, res, {
+      filename,
       user,
       cid,
     });
@@ -74,20 +76,12 @@ export default async (req, res) => {
   }
 
   if (!uploadResponse) {
-    return res.status(400).send({ decorator: "UPLOAD_ERROR", error: true });
-  }
-
-  if (uploadResponse.error) {
-    ScriptLogging.error(SHOVEL, uploadResponse.message);
-    return res.status(400).send({
-      decorator: uploadResponse.decorator,
-      error: uploadResponse.error,
-    });
+    return;
   }
 
   const { data: file } = uploadResponse;
 
-  const response = await Data.createFile({ owner: user, files: [file] });
+  const response = await Data.createFile({ owner: user, files: file });
 
   if (!response) {
     return res.status(404).send({ decorator: "CREATE_FILE_FAILED", error: true });

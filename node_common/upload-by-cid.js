@@ -8,7 +8,7 @@ import fs from "fs";
 
 const SHOVEL = "RENDER->TEXTILE ";
 
-export async function upload(req, res, { cid, user, bucketName }) {
+export async function upload(req, res, { filename, cid, user, bucketName }) {
   let { buckets, bucketKey, bucketRoot } = await Utilities.getBucketAPIFromUserToken({
     user,
     bucketName,
@@ -26,32 +26,45 @@ export async function upload(req, res, { cid, user, bucketName }) {
 
   const url = Strings.getURLfromCID(cid);
 
-  let data = LibraryManager.createLocalDataIncomplete({ name: cid });
+  let data = LibraryManager.createLocalDataIncomplete({ name: filename || cid });
 
   data.cid = cid;
 
   const location = `/tmp/${data.id}`;
 
   const writeStreamToDisk = async (url) => {
-    return new Promise((resolve, reject) => {
-      fetch(url).then((r) => {
-        data.data.type = r.headers.get("content-type");
+    return new Promise(async (resolve, reject) => {
+      let r;
+      try {
+        const controller = new AbortController();
+        const id = setTimeout(() => controller.abort(), 5000);
 
-        const destination = fs.createWriteStream(location);
+        r = await fetch(url, { signal: controller.signal });
+        clearTimeout(id);
+      } catch (e) {
+        console.log(e);
+      }
 
-        r.body.pipe(destination);
-        r.body.on("end", () => {
-          ScriptLogging.message(SHOVEL, `Finished writing to disk at ${location}`);
-          resolve({ path: location });
-        });
-        r.body.on("error", (e) =>
-          reject({
-            error: true,
-            decorator: "UPLOAD_WRITE_TO_DISK_ERROR",
-            message: `Error while writing to disk: ${e}`,
-          })
-        );
+      if (!r || r.status !== 200) {
+        return reject({ error: true, decorator: "NO_FILE_WITH_THAT_CID_FOUND" });
+      }
+
+      data.data.type = r.headers.get("content-type");
+
+      const destination = fs.createWriteStream(location);
+
+      r.body.pipe(destination);
+      r.body.on("end", () => {
+        ScriptLogging.message(SHOVEL, `Finished writing to disk at ${location}`);
+        resolve({ path: location });
       });
+      r.body.on("error", (e) =>
+        reject({
+          error: true,
+          decorator: "UPLOAD_WRITE_TO_DISK_ERROR",
+          message: `Error while writing to disk: ${e}`,
+        })
+      );
     });
   };
 
@@ -79,7 +92,7 @@ export async function upload(req, res, { cid, user, bucketName }) {
     cid,
   });
 
-  if (!response || response.error) {
+  if (!response) {
     return res.status(400).send({ decorator: "ERROR_WHILE_SAVING_FILE", error: true });
   }
 

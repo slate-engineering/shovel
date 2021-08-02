@@ -257,7 +257,7 @@ export async function formMultipart(req, res, { user, bucketName, originalFileNa
   }
 
   data.cid = response.data.replace("/ipfs/", "");
-  console.log(data);
+
   ScriptLogging.message(POST, `SUCCESS !!!`);
   return { decorator: "UPLOAD_SUCCESS", data };
 }

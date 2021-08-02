@@ -64,7 +64,7 @@ export const setupWithThread = async ({ buckets }) => {
 
 export const addExistingCIDToData = async ({ buckets, key, path, cid }) => {
   try {
-    await buckets.setPath(key, path || "/", cid);
+    let res = await buckets.setPath(key, path || "/", cid);
     return true;
   } catch (e) {
     return false;

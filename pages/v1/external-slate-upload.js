@@ -13,7 +13,6 @@ export default async (req, res) => {
       error: true,
     });
   }
-
   let slate = await Data.getSlateById({ id: req.params.slate, includeFiles: true, sanitize: true });
 
   if (!slate) {
