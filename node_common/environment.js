@@ -19,5 +19,5 @@ export const TEXTILE_HUB_SECRET = process.env.TEXTILE_HUB_SECRET;
 export const TEXTILE_SLACK_WEBHOOK_KEY = process.env.TEXTILE_SLACK_WEBHOOK_KEY;
 export const DOWNLOAD_REDIS_HOST = process.env.DOWNLOAD_REDIS_HOST;
 export const DOWNLOAD_REDIS_PASSWORD = process.env.DOWNLOAD_REDIS_PASSWORD;
-export const DOWNLOAD_REDIS_PORT = process.env.DOWNLOAD_REDIS_PORT;
+export const DOWNLOAD_REDIS_PORT = +process.env.DOWNLOAD_REDIS_PORT;
 export const RESOURCE_URI_SLATE = process.env.RESOURCE_URI_SLATE;
