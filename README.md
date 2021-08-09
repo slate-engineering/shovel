@@ -16,6 +16,7 @@ TEXTILE_HUB_SECRET=XXX
 TEXTILE_SLACK_WEBHOOK_KEY=XXX
 JWT_SECRET=XXX
 SOURCE=shovel
+URI_SLATE=http://localhost:1337
 ```
 
 ### Run the server
