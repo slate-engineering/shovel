@@ -11,7 +11,7 @@ const DOWNLOAD_ERROR_MESSAGE = `
 <html lang="en">
 	<head>
 		<script>
-          parent.postMessage('SLATE_DOWNLOAD_ERROR','${Environment.RESOURCE_URI_SLATE}');
+          parent.postMessage('SLATE_DOWNLOAD_ERROR','${Environment.URI_SLATE}');
     </script>
 	</head>
 	<body></body>
