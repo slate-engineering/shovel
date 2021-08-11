@@ -1,5 +1,5 @@
-export const NODE_ENV = process.env.NODE_ENV || "development";
-export const IS_PRODUCTION = NODE_ENV === "production";
+export const NODE = process.env.NODE_ENV || "development";
+export const IS_PRODUCTION = NODE === "production";
 export const PORT = process.env.PORT || 4242;
 export const SOURCE = process.env.SOURCE;
 
@@ -20,4 +20,4 @@ export const TEXTILE_SLACK_WEBHOOK_KEY = process.env.TEXTILE_SLACK_WEBHOOK_KEY;
 export const DOWNLOAD_REDIS_HOST = process.env.DOWNLOAD_REDIS_HOST;
 export const DOWNLOAD_REDIS_PASSWORD = process.env.DOWNLOAD_REDIS_PASSWORD;
 export const DOWNLOAD_REDIS_PORT = +process.env.DOWNLOAD_REDIS_PORT;
-export const URI_SLATE = process.env.URI_SLATE;
+export const RESOURCE_URI_SLATE = process.env.RESOURCE_URI_SLATE;
