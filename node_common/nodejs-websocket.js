@@ -12,11 +12,11 @@ export const create = () => {
     return;
   }
 
-  if (Strings.isEmpty(Environment.RESOURCE_URI_PUBSUB)) {
+  if (Strings.isEmpty(Environment.URI_FIJI)) {
     return;
   }
 
-  ws = new WebSocket(Environment.RESOURCE_URI_PUBSUB, {
+  ws = new WebSocket(Environment.URI_FIJI, {
     perMessageDeflate: false,
   });
 
