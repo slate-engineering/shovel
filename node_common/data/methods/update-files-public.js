@@ -26,10 +26,6 @@ export default async ({ ids, ownerId }) => {
       }
       let activityQuery = await DB.insert(activityItems).into("activity");
 
-      const summaryQuery = await DB.from("users")
-        .where("id", ownerId)
-        .increment("fileCount", privateIds.length);
-
       const response = await DB.from("files")
         .whereIn("id", privateIds)
         .update({ isPublic: true })

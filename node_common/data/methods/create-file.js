@@ -46,10 +46,6 @@ export default async ({ owner, files, saveCopy = false }) => {
 
       if (activityItems.length) {
         const activityQuery = await DB.insert(activityItems).into("activity");
-
-        const summaryQuery = await DB.from("users")
-          .where("id", owner.id)
-          .increment("fileCount", publicCount);
       }
 
       if (!query) {
