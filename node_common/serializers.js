@@ -18,7 +18,6 @@ export const sanitizeUser = (entity) => {
       photo: entity.data?.photo,
       body: entity.data?.body,
     },
-    fileCount: entity.fileCount,
     followerCount: entity.followerCount,
     slateCount: entity.slateCount,
   };

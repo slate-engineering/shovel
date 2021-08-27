@@ -42,13 +42,6 @@ export default async ({ id, ownerId, isPublic }) => {
 
       const response = await DB.from("files").where("id", id).update({ isPublic }).returning("*");
 
-      //NOTE(martina): then decrement the public fileCount for those users
-      if (isPublic) {
-        const summaryQuery = await DB.from("users").where("id", ownerId).increment("fileCount", 1);
-      } else {
-        const summaryQuery = await DB.from("users").where("id", ownerId).decrement("fileCount", 1);
-      }
-
       const index = response ? response.pop() : null;
       return JSON.parse(JSON.stringify(index));
     },

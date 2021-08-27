@@ -22,7 +22,6 @@ export const userProperties = [
   "users.id",
   "users.username",
   "users.data",
-  "users.fileCount",
   "users.slateCount",
   "users.followerCount",
 ];
