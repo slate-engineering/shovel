@@ -8,7 +8,7 @@ export default async ({ ownerId }) => {
   return await runQuery({
     label: "GET_FOLLOWING_BY_USER_ID",
     queryFn: async (DB) => {
-      const query = await DB.select(...Constants.userProperties)
+      const query = await DB.select(...Serializers.userProperties)
         .from("users")
         .join("subscriptions", "subscriptions.userId", "=", "users.id")
         .where({ "subscriptions.ownerId": ownerId })

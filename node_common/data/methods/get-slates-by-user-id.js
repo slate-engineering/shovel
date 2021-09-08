@@ -4,7 +4,7 @@ import * as Logging from "~/common/logging";
 
 import { runQuery } from "~/node_common/data/utilities";
 
-export default async ({ ownerId, sanitize = false, includeFiles = false, publicOnly = false }) => {
+export default async ({ ownerId, includeFiles = false, publicOnly = false }) => {
   return await runQuery({
     label: "GET_SLATES_BY_USER_ID",
     queryFn: async (DB) => {
@@ -28,7 +28,7 @@ export default async ({ ownerId, sanitize = false, includeFiles = false, publicO
       let query;
       if (includeFiles) {
         if (publicOnly) {
-          query = await DB.select(...Constants.slateProperties, slateFiles())
+          query = await DB.select(...Serializers.slateProperties, slateFiles())
             .from("slates")
             .leftJoin("slate_files", "slate_files.slateId", "=", "slates.id")
             .leftJoin("files", "slate_files.fileId", "=", "files.id")
@@ -36,7 +36,7 @@ export default async ({ ownerId, sanitize = false, includeFiles = false, publicO
             .groupBy("slates.id")
             .orderBy("slates.updatedAt", "desc");
         } else {
-          query = await DB.select(...Constants.slateProperties, slateFiles())
+          query = await DB.select(...Serializers.slateProperties, slateFiles())
             .from("slates")
             .leftJoin("slate_files", "slate_files.slateId", "=", "slates.id")
             .leftJoin("files", "slate_files.fileId", "=", "files.id")
@@ -46,12 +46,12 @@ export default async ({ ownerId, sanitize = false, includeFiles = false, publicO
         }
       } else {
         if (publicOnly) {
-          query = await DB.select(...Constants.slateProperties)
+          query = await DB.select(...Serializers.slateProperties)
             .from("slates")
             .where({ "slates.ownerId": ownerId, "slates.isPublic": true })
             .orderBy("updatedAt", "desc");
         } else {
-          query = await DB.select(...Constants.slateProperties)
+          query = await DB.select(...Serializers.slateProperties)
             .from("slates")
             .where({ "slates.ownerId": ownerId })
             .orderBy("updatedAt", "desc");
@@ -60,14 +60,6 @@ export default async ({ ownerId, sanitize = false, includeFiles = false, publicO
 
       if (!query || query.error) {
         return [];
-      }
-
-      let serialized = [];
-      if (sanitize) {
-        for (let slate of query) {
-          serialized.push(Serializers.sanitizeSlate(slate));
-        }
-        return JSON.parse(JSON.stringify(serialized));
       }
 
       return JSON.parse(JSON.stringify(query));

@@ -1,3 +1,5 @@
+import * as Data from "~/node_common/data";
+
 import { runQuery } from "~/node_common/data/utilities";
 
 export default async ({ ownerId, slateId, userId }) => {
@@ -19,9 +21,7 @@ export default async ({ ownerId, slateId, userId }) => {
           type: "SUBSCRIBE_SLATE",
         }).into("activity");
 
-        let summaryQuery = await DB.from("slates")
-          .where({ id: slateId })
-          .increment("subscriberCount", 1);
+        await Data.recalcSlateSubscribercount({ slateId });
       } else if (userId) {
         const activityQuery = await DB.insert({
           ownerId,
@@ -29,9 +29,7 @@ export default async ({ ownerId, slateId, userId }) => {
           type: "SUBSCRIBE_USER",
         }).into("activity");
 
-        let summaryQuery = await DB.from("users")
-          .where({ id: userId })
-          .increment("followerCount", 1);
+        await Data.recalcUserFollowercount({ userId });
       }
 
       const index = query ? query.pop() : null;

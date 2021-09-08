@@ -1,4 +1,5 @@
 import * as Constants from "~/node_common/constants";
+import * as Serializers from "~/node_common/serializers";
 
 import { runQuery } from "~/node_common/data/utilities";
 
@@ -10,7 +11,7 @@ export default async ({ slateId, cids }) => {
   return await runQuery({
     label: "GET_SLATE_FILES_BY_CID",
     queryFn: async (DB) => {
-      const query = await DB.select(...Constants.fileProperties)
+      const query = await DB.select(...Serializers.fileProperties)
         .from("files")
         .join("slate_files", "slate_files.fileId", "=", "files.id")
         .where("slate_files.slateId", slateId)

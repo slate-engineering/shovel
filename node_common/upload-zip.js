@@ -267,20 +267,19 @@ export async function formMultipart(req, res, { user, bucketName, originalFileNa
 
   try {
     const newUpload = await refreshed.buckets.listIpfsPath(response.data);
-    data.data.size = newUpload.size;
+    data.size = newUpload.size;
     if (unityGameConfig || unityGameLoader) {
-      data.data.unity = {
-        config: unityGameConfig,
-        loader: unityGameLoader,
+      data.data = {
+        unity: {
+          config: unityGameConfig,
+          loader: unityGameLoader,
+        },
       };
     }
 
     gameRootUrl = newUpload.cid;
 
-    ScriptLogging.message(
-      POST,
-      `${data.filename} : ${Strings.bytesToSize(data.data.size)} uploaded`
-    );
+    ScriptLogging.message(POST, `${data.filename} : ${Strings.bytesToSize(data.size)} uploaded`);
   } catch (e) {
     Social.sendTextileSlackMessage({
       file: "/node_common/upload.js",

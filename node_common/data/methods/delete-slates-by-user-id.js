@@ -18,9 +18,9 @@ export default async ({ ownerId }) => {
 
       const activity = await DB("activity").whereIn("slateId", slateIds).del();
 
-      const slates = await DB("slates").whereIn("id", slateIds).del();
+      const slates = await DB("slates").whereIn("id", slateIds).del().returning("*");
 
-      return true;
+      return slates;
     },
     errorFn: async (e) => {
       return {

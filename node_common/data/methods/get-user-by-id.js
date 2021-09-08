@@ -43,7 +43,7 @@ export default async ({ id, sanitize = false, includeFiles = false, publicOnly =
 
           query = await DB.select("*").from("users").where({ id }).first();
 
-          let library = await DB.select(...Constants.fileProperties)
+          let library = await DB.select(...Serializers.fileProperties)
             .from("files")
             .leftJoin("slate_files", "slate_files.fileId", "=", "files.id")
             .leftJoin("slates", "slate_files.slateId", "=", "slates.id")
@@ -62,7 +62,7 @@ export default async ({ id, sanitize = false, includeFiles = false, publicOnly =
 
           query.library = library;
         } else {
-          query = await DB.select(...Constants.userProperties, userFiles())
+          query = await DB.select(...Serializers.userProperties, userFiles())
             .from("users")
             .where({ "users.id": id })
             .leftJoin("files", "files.ownerId", "users.id")

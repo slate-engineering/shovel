@@ -2,7 +2,7 @@ import * as Serializers from "~/node_common/serializers";
 
 import { runQuery } from "~/node_common/data/utilities";
 
-export default async ({ ownerId, cids, sanitize = false }) => {
+export default async ({ ownerId, cids }) => {
   return await runQuery({
     label: "GET_FILES_BY_CIDS",
     queryFn: async (DB) => {
@@ -15,14 +15,6 @@ export default async ({ ownerId, cids, sanitize = false }) => {
 
       if (!query || query.error) {
         return null;
-      }
-
-      let serialized = [];
-      if (sanitize) {
-        for (let file of query) {
-          serialized.push(Serializers.sanitizeFile(file));
-        }
-        return JSON.parse(JSON.stringify(serialized));
       }
 
       return JSON.parse(JSON.stringify(query));

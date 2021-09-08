@@ -49,7 +49,7 @@ export async function upload(req, res, { filename, cid, user, bucketName }) {
         return reject({ error: true, decorator: "NO_FILE_WITH_THAT_CID_FOUND" });
       }
 
-      data.data.type = r.headers.get("content-type");
+      data.type = r.headers.get("content-type");
 
       const destination = fs.createWriteStream(location);
 
@@ -76,7 +76,7 @@ export async function upload(req, res, { filename, cid, user, bucketName }) {
   }
 
   let fileStats = fs.statSync(location);
-  data.data.size = fileStats.size;
+  data.size = fileStats.size;
 
   fs.unlink(location, (e) => {
     if (e) {

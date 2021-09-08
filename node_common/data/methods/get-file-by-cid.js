@@ -4,7 +4,7 @@ import { runQuery } from "~/node_common/data/utilities";
 
 //NOTE(martina): if you include an ownerId, this will return a single entry since there are no duplicate cids within a user's files
 //if you don't include an ownerId, this will return an array of entries since multiple users can have the same file
-export default async ({ ownerId, cid, sanitize = false }) => {
+export default async ({ ownerId, cid }) => {
   return await runQuery({
     label: "GET_FILE_BY_CID",
     queryFn: async (DB) => {
@@ -17,10 +17,6 @@ export default async ({ ownerId, cid, sanitize = false }) => {
 
       if (!query || query.error) {
         return null;
-      }
-
-      if (sanitize) {
-        query = Serializers.sanitizeFile(query);
       }
 
       return JSON.parse(JSON.stringify(query));

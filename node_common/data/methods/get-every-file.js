@@ -3,7 +3,7 @@ import * as Serializers from "~/node_common/serializers";
 
 import { runQuery } from "~/node_common/data/utilities";
 
-export default async ({ sanitize = false, publicOnly = false } = {}) => {
+export default async ({ publicOnly = false } = {}) => {
   return await runQuery({
     label: "GET_EVERY_FILE",
     queryFn: async (DB) => {
@@ -16,10 +16,6 @@ export default async ({ sanitize = false, publicOnly = false } = {}) => {
 
       if (!files || files.error) {
         return [];
-      }
-
-      if (sanitize) {
-        files = files.map((file) => Serializers.sanitizeFile(file));
       }
 
       return JSON.parse(JSON.stringify(files));

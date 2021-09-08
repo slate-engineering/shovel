@@ -8,7 +8,7 @@ export default async ({ slateId }) => {
   return await runQuery({
     label: "GET_SUBSCRIBERS_BY_SLATE_ID",
     queryFn: async (DB) => {
-      const query = await DB.select(...Constants.userProperties)
+      const query = await DB.select(...Serializers.userProperties)
         .from("users")
         .join("subscriptions", "subscriptions.ownerId", "=", "users.id")
         .where({ "subscriptions.slateId": slateId })

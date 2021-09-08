@@ -1,5 +1,7 @@
 import { runQuery } from "~/node_common/data/utilities";
 
+import * as Data from "~/node_common/data";
+
 //NOTE(martina): this is the endpoint used when adding an existing file to a slate. Creates a slate_files entry
 export default async ({ owner, slate, files }) => {
   let ids = files.map((file) => file.id);
@@ -43,9 +45,7 @@ export default async ({ owner, slate, files }) => {
         const activityQuery = await DB.insert(activityItems).into("activity");
       }
 
-      const summaryQuery = await DB("slates")
-        .where("id", slate.id)
-        .increment("fileCount", files.length);
+      await Data.recalcSlateFilecount({ slateId: slate.id });
 
       if (!query) {
         return null;

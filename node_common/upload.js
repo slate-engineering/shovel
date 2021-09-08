@@ -235,12 +235,9 @@ export async function formMultipart(req, res, { user, bucketName, originalFileNa
 
   try {
     const newUpload = await refreshed.buckets.listIpfsPath(response.data);
-    data.data.size = newUpload.size;
+    data.size = newUpload.size;
 
-    ScriptLogging.message(
-      POST,
-      `${data.filename} : ${Strings.bytesToSize(data.data.size)} uploaded`
-    );
+    ScriptLogging.message(POST, `${data.filename} : ${Strings.bytesToSize(data.size)} uploaded`);
   } catch (e) {
     Social.sendTextileSlackMessage({
       file: "/node_common/upload.js",

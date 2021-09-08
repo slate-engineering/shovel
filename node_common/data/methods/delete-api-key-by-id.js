@@ -4,9 +4,11 @@ export default async ({ id }) => {
   return await runQuery({
     label: "DELETE_API_KEY_BY_ID",
     queryFn: async (DB) => {
-      const data = await DB.from("keys").where({ id }).del();
+      const data = await DB.from("keys").where({ id }).del().returning("*");
 
-      return 1 === data;
+      let key = data ? data.pop() : data;
+
+      return key;
     },
     errorFn: async (e) => {
       return {

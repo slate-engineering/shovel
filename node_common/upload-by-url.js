@@ -38,10 +38,10 @@ export async function upload(req, res, { filename, url, user, bucketName }) {
   const writeStreamToDisk = async (url) => {
     return new Promise((resolve, reject) => {
       fetch(url).then((r) => {
-        data.data.type = r.headers.get("content-type");
+        data.type = r.headers.get("content-type");
         let size = r.headers.get("content-length");
         if (size) {
-          data.data.size = parseInt(size);
+          data.size = parseInt(size);
         }
 
         const destination = fs.createWriteStream(location);
@@ -71,9 +71,9 @@ export async function upload(req, res, { filename, url, user, bucketName }) {
     return e;
   }
 
-  if (!data.data.size) {
+  if (!data.size) {
     let fileStats = fs.statSync(location);
-    data.data.size = fileStats.size;
+    data.size = fileStats.size;
   }
 
   let dataPath = null;

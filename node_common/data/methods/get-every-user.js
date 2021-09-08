@@ -19,11 +19,11 @@ export default async ({ sanitize = false, includeFiles = false } = {}) => {
 
       let users;
       if (includeFiles) {
-        users = await DB.select(...Constants.userProperties, userFiles())
+        users = await DB.select(...Serializers.userProperties, userFiles())
           .from("users")
           .leftJoin("files", "files.ownerId", "users.id");
       } else {
-        users = await DB.select(...Constants.userProperties).from("users");
+        users = await DB.select(...Serializers.userProperties).from("users");
       }
 
       if (!users || users.error) {
