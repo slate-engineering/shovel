@@ -11,7 +11,7 @@ export default async (slate) => {
       const index = query ? query.pop() : null;
 
       if (index) {
-        if (isPublic) {
+        if (slate.isPublic) {
           const activityQuery = await DB.insert({
             ownerId: slate.ownerId,
             slateId: index.id,

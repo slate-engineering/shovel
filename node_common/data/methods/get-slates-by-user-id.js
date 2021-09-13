@@ -1,5 +1,3 @@
-import * as Serializers from "~/node_common/serializers";
-import * as Constants from "~/node_common/constants";
 import * as Logging from "~/common/logging";
 
 import { runQuery } from "~/node_common/data/utilities";
@@ -28,7 +26,7 @@ export default async ({ ownerId, includeFiles = false, publicOnly = false }) => 
       let query;
       if (includeFiles) {
         if (publicOnly) {
-          query = await DB.select(...Serializers.slateProperties, slateFiles())
+          query = await DB.select("slates.*", slateFiles())
             .from("slates")
             .leftJoin("slate_files", "slate_files.slateId", "=", "slates.id")
             .leftJoin("files", "slate_files.fileId", "=", "files.id")
@@ -36,7 +34,7 @@ export default async ({ ownerId, includeFiles = false, publicOnly = false }) => 
             .groupBy("slates.id")
             .orderBy("slates.updatedAt", "desc");
         } else {
-          query = await DB.select(...Serializers.slateProperties, slateFiles())
+          query = await DB.select("slates.*", slateFiles())
             .from("slates")
             .leftJoin("slate_files", "slate_files.slateId", "=", "slates.id")
             .leftJoin("files", "slate_files.fileId", "=", "files.id")
@@ -46,14 +44,14 @@ export default async ({ ownerId, includeFiles = false, publicOnly = false }) => 
         }
       } else {
         if (publicOnly) {
-          query = await DB.select(...Serializers.slateProperties)
+          query = await DB.select("*")
             .from("slates")
-            .where({ "slates.ownerId": ownerId, "slates.isPublic": true })
+            .where({ ownerId: ownerId, isPublic: true })
             .orderBy("updatedAt", "desc");
         } else {
-          query = await DB.select(...Serializers.slateProperties)
+          query = await DB.select("*")
             .from("slates")
-            .where({ "slates.ownerId": ownerId })
+            .where({ ownerId: ownerId })
             .orderBy("updatedAt", "desc");
         }
       }

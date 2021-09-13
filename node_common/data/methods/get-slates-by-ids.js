@@ -1,6 +1,3 @@
-import * as Serializers from "~/node_common/serializers";
-import * as Constants from "~/node_common/constants";
-
 import { runQuery } from "~/node_common/data/utilities";
 
 export default async ({ ids, includeFiles = false }) => {
@@ -20,16 +17,14 @@ export default async ({ ids, includeFiles = false }) => {
         ]);
 
       if (includeFiles) {
-        query = await DB.select(...Serializers.slateProperties, slateFiles())
+        query = await DB.select("slates.*", slateFiles())
           .from("slates")
           .leftJoin("slate_files", "slate_files.slateId", "=", "slates.id")
           .leftJoin("files", "slate_files.fileId", "=", "files.id")
           .whereIn("slates.id", ids)
           .groupBy("slates.id");
       } else {
-        query = await DB.select(...Serializers.slateProperties)
-          .from("slates")
-          .whereIn("id", ids);
+        query = await DB.select("*").from("slates").whereIn("id", ids);
       }
 
       if (!query || query.error) {

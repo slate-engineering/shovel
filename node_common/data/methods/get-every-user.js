@@ -19,19 +19,25 @@ export default async ({ sanitize = false, includeFiles = false } = {}) => {
 
       let users;
       if (includeFiles) {
-        users = await DB.select(...Serializers.userProperties, userFiles())
-          .from("users")
-          .leftJoin("files", "files.ownerId", "users.id");
+        if (sanitize) {
+          users = await DB.select(...Serializers.userPublicProperties, userFiles())
+            .from("users")
+            .leftJoin("files", "files.ownerId", "users.id");
+        } else {
+          users = await DB.select("users.*", userFiles())
+            .from("users")
+            .leftJoin("files", "files.ownerId", "users.id");
+        }
       } else {
-        users = await DB.select(...Serializers.userProperties).from("users");
+        if (sanitize) {
+          users = await DB.select(...Serializers.userPublicProperties).from("users");
+        } else {
+          users = await DB.select("*").from("users");
+        }
       }
 
       if (!users || users.error) {
         return [];
-      }
-
-      if (sanitize) {
-        users = users.map((user) => Serializers.sanitizeUser(user));
       }
 
       return JSON.parse(JSON.stringify(users));

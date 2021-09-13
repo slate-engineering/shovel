@@ -1,4 +1,4 @@
-import * as Constants from "~/node_common/constants";
+import * as Serializers from "~/node_common/serializers";
 
 import { runQuery } from "~/node_common/data/utilities";
 
@@ -33,14 +33,14 @@ export default async ({
   const slateOwnerFields = [
     "slate_table",
     "slate_with_objects.*",
-    ...Constants.userPreviewProperties,
+    ...Serializers.userPreviewProperties,
     "owner",
     "slate_with_objects",
     "users",
     "slate_with_objects.ownerId",
     "users.id",
   ];
-  const slateOwnerQuery = `?? as (SELECT ??, json_build_object('id', ??, 'data', ??, 'username', ??) as ?? FROM ?? LEFT JOIN ?? ON ?? = ?? ) `;
+  const slateOwnerQuery = `?? as (SELECT ??, json_build_object('id', ??, 'name', ??, 'username', ??, 'photo', ??) as ?? FROM ?? LEFT JOIN ?? ON ?? = ?? ) `;
 
   const slateFields = [
     "slate_with_objects",
@@ -87,14 +87,14 @@ export default async ({
   const fileFields = [
     "files_table",
     "files.*",
-    ...Constants.userPreviewProperties,
+    ...Serializers.userPreviewProperties,
     "owner",
     "files",
     "users",
     "files.ownerId",
     "users.id",
   ];
-  const fileQuery = `, ?? as (SELECT ??, json_build_object('id', ??, 'data', ??, 'username', ??) as ?? FROM ?? LEFT JOIN ?? on ?? = ??)`;
+  const fileQuery = `, ?? as (SELECT ??, json_build_object('id', ??, 'name', ??, 'username', ??, 'photo', ??) as ?? FROM ?? LEFT JOIN ?? on ?? = ??)`;
 
   const selectFields = [
     ...slateFields,

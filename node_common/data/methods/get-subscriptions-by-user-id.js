@@ -1,5 +1,4 @@
 import * as Serializers from "~/node_common/serializers";
-import * as Constants from "~/node_common/constants";
 import * as Logging from "~/common/logging";
 
 import { runQuery } from "~/node_common/data/utilities";
@@ -11,9 +10,9 @@ export default async ({ ownerId }) => {
       // const slateFiles = () =>
       //   DB.raw("json_agg(?? order by ?? asc) as ??", ["files", "slate_files.createdAt", "objects"]);
 
-      const ownerQueryFields = [...Constants.userPreviewProperties, "owner"];
+      const ownerQueryFields = [...Serializers.userPreviewProperties, "owner"];
       const ownerQuery = DB.raw(
-        `json_build_object('id', ??, 'data', ??, 'username', ??) as ??`,
+        `json_build_object('id', ??, 'name', ??, 'username', ??, 'photo', ??) as ??`,
         ownerQueryFields
       );
 
@@ -27,7 +26,7 @@ export default async ({ ownerId }) => {
 
       const query = await DB.with("slates", (db) =>
         db
-          .select(...Serializers.slateProperties, slateFiles())
+          .select("slates.*", slateFiles())
           .from("slates")
           .join("subscriptions", "subscriptions.slateId", "=", "slates.id")
           .join("slate_files", "slate_files.slateId", "=", "slates.id")
@@ -36,7 +35,7 @@ export default async ({ ownerId }) => {
           // .orderBy("subscriptions.createdAt", "desc");
           .groupBy("slates.id")
       )
-        .select(...Serializers.slateProperties, "objects", ownerQuery)
+        .select("slates.*", "objects", ownerQuery)
         .from("slates")
         .join("users", "slates.ownerId", "users.id");
 

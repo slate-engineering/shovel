@@ -8,7 +8,7 @@ export default async ({ ownerId }) => {
   return await runQuery({
     label: "GET_FOLLOWING_BY_USER_ID",
     queryFn: async (DB) => {
-      const query = await DB.select(...Serializers.userProperties)
+      const query = await DB.select(...Serializers.userPublicProperties)
         .from("users")
         .join("subscriptions", "subscriptions.userId", "=", "users.id")
         .where({ "subscriptions.ownerId": ownerId })
@@ -18,12 +18,7 @@ export default async ({ ownerId }) => {
         return [];
       }
 
-      let serialized = [];
-      for (let user of query) {
-        serialized.push(Serializers.sanitizeUser(user));
-      }
-
-      return JSON.parse(JSON.stringify(serialized));
+      return JSON.parse(JSON.stringify(query));
     },
     errorFn: async (e) => {
       Logging.error({

@@ -10,8 +10,6 @@ import * as Arrays from "~/common/arrays";
 import * as SearchManager from "~/node_common/managers/search";
 
 import crypto from "crypto";
-import JWT from "jsonwebtoken";
-import BCrypt from "bcrypt";
 
 const ENCRYPTION_ALGORITHM = "aes-256-ctr";
 const ENCRYPTION_IV = crypto.randomBytes(16);
@@ -58,29 +56,6 @@ export const checkTextile = async () => {
   return false;
 };
 
-export const getIdFromCookie = (req) => {
-  let id = null;
-  if (Strings.isEmpty(req.headers.cookie)) {
-    return id;
-  }
-
-  const token = req.headers.cookie.replace(
-    /(?:(?:^|.*;\s*)WEB_SERVICE_SESSION_KEY\s*\=\s*([^;]*).*$)|^.*$/,
-    "$1"
-  );
-
-  if (!Strings.isEmpty(token)) {
-    try {
-      const decoded = JWT.verify(token, Environment.JWT_SECRET);
-      id = decoded.id;
-    } catch (e) {
-      Logging.error(e.message);
-    }
-  }
-
-  return id;
-};
-
 export const encryptWithSecret = async (text, secret) => {
   const cipher = crypto.createCipheriv(ENCRYPTION_ALGORITHM, secret, ENCRYPTION_IV);
   const encrypted = Buffer.concat([cipher.update(text), cipher.final()]);
@@ -89,20 +64,6 @@ export const encryptWithSecret = async (text, secret) => {
     iv: ENCRYPTION_IV.toString("hex"),
     hex: encrypted.toString("hex"),
   };
-};
-
-export const encryptPassword = async (text, salt) => {
-  if (!text) {
-    return null;
-  }
-
-  let hash = text;
-  for (let i = 0; i < Environment.LOCAL_PASSWORD_ROUNDS_MANUAL; i++) {
-    hash = await BCrypt.hash(hash, salt);
-  }
-  hash = await BCrypt.hash(hash, Environment.LOCAL_PASSWORD_SECRET);
-
-  return hash;
 };
 
 export const parseAuthHeader = (value) => {
