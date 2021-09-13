@@ -9,7 +9,7 @@ import * as Strings from "~/common/strings";
 const SHOVEL = "SHOVEL          ";
 
 export default async (req, res) => {
-  const userInfo = await RequestUtilities.checkAuthorizationExternal(req, res);
+  const userInfo = await RequestUtilities.checkAuthorizationInternal(req, res);
   if (!userInfo) return;
   const { id, key, user } = userInfo;
 

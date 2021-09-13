@@ -6,8 +6,13 @@ import * as ScriptLogging from "~/node_common/script-logging";
 import * as UploadByUrl from "~/node_common/upload-by-url";
 import * as RequestUtilities from "~/node_common/request-utilities";
 
-export const uploadByUrl = async (req, res) => {
-  const userInfo = await RequestUtilities.checkAuthorizationExternal(req, res);
+export const uploadByUrl = async (req, res, internal = false) => {
+  let userInfo;
+  if (internal) {
+    userInfo = await RequestUtilities.checkAuthorizationInternal(req, res);
+  } else {
+    userInfo = await RequestUtilities.checkAuthorizationExternal(req, res);
+  }
   if (!userInfo) return;
   const { id, key, user } = userInfo;
 

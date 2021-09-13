@@ -8,9 +8,12 @@ import * as ArrayUtilities from "~/node_common/array-utilities";
 import * as Monitor from "~/node_common/monitor";
 import * as Arrays from "~/common/arrays";
 import * as SearchManager from "~/node_common/managers/search";
+import * as ScriptLogging from "~/node_common/script-logging";
 
 import crypto from "crypto";
+import JWT from "jsonwebtoken";
 
+const SHOVEL = "SHOVEL          ";
 const ENCRYPTION_ALGORITHM = "aes-256-ctr";
 const ENCRYPTION_IV = crypto.randomBytes(16);
 
@@ -21,6 +24,16 @@ const BUCKET_NAME = "data";
 const TEXTILE_KEY_INFO = {
   key: Environment.TEXTILE_HUB_KEY,
   secret: Environment.TEXTILE_HUB_SECRET,
+};
+
+export const decodeCookieToken = (token) => {
+  try {
+    const decoded = JWT.verify(token, Environment.JWT_SECRET);
+    return decoded.id;
+  } catch (e) {
+    ScriptLogging.error(SHOVEL, e.message);
+    return null;
+  }
 };
 
 export const checkTextile = async () => {

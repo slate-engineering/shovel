@@ -3,9 +3,19 @@ import * as Strings from "~/common/strings";
 import * as Utilities from "~/node_common/utilities";
 
 export const checkAuthorizationInternal = async (req, res) => {
-  const id = Utilities.getIdFromCookie(req);
-  if (!id) {
-    return res.status(401).send({ decorator: "SERVER_NOT_AUTHENTICATED", error: true });
+  if (Strings.isEmpty(req.headers.authorization)) {
+    res.status(404).send({
+      decorator: "NO_API_KEY_PROVIDED",
+      error: true,
+    });
+    return;
+  }
+
+  const id = Utilities.decodeCookieToken(req.headers.authorization);
+
+  if (Strings.isEmpty(id)) {
+    res.status(403).send({ decorator: "SERVER_NOT_AUTHENTICATED", error: true });
+    return;
   }
 
   const user = await Data.getUserById({
@@ -13,17 +23,19 @@ export const checkAuthorizationInternal = async (req, res) => {
   });
 
   if (!user) {
-    return res.status(404).send({
+    res.status(404).send({
       decorator: "SERVER_USER_NOT_FOUND",
       error: true,
     });
+    return;
   }
 
   if (user.error) {
-    return res.status(500).send({
+    res.status(500).send({
       decorator: "SERVER_USER_NOT_FOUND",
       error: true,
     });
+    return;
   }
 
   return { id, user };
@@ -31,10 +43,11 @@ export const checkAuthorizationInternal = async (req, res) => {
 
 export const checkAuthorizationExternal = async (req, res) => {
   if (Strings.isEmpty(req.headers.authorization)) {
-    return res.status(404).send({
+    res.status(404).send({
       decorator: "NO_API_KEY_PROVIDED",
       error: true,
     });
+    return;
   }
 
   const parsed = Strings.getKey(req.headers.authorization);
@@ -44,19 +57,21 @@ export const checkAuthorizationExternal = async (req, res) => {
   });
 
   if (!key) {
-    return res.status(403).send({
+    res.status(403).send({
       decorator: "NO_MATCHING_API_KEY_FOUND",
       message: "We could not find that API key in our records",
       error: true,
     });
+    return;
   }
 
   if (key.error) {
-    return res.status(500).send({
+    res.status(500).send({
       decorator: "ERROR_WHILE_VERIFYING_API_KEY",
       message: "We ran into an error while verifying that API key. Please try again",
       error: true,
     });
+    return;
   }
 
   const user = await Data.getUserById({
@@ -64,20 +79,22 @@ export const checkAuthorizationExternal = async (req, res) => {
   });
 
   if (!user) {
-    return res.status(404).send({
+    res.status(404).send({
       decorator: "API_KEY_OWNER_NOT_FOUND",
       message: "We were unable to find the owner of that API key",
       error: true,
     });
+    return;
   }
 
   if (user.error) {
-    return res.status(500).send({
+    res.status(500).send({
       decorator: "ERROR_WHILE_LOCATING_API_KEY_OWNER",
       message:
         "We ran into an error while trying to find the owner of that API key. Please try again",
       error: true,
     });
+    return;
   }
 
   return { id: user.id, key, user };
