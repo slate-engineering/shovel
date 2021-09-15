@@ -21,12 +21,13 @@ export const upload = async (req, res) => {
   }
 
   if (!uploadResponse || uploadResponse.error) {
-    ScriptLogging.error(SHOVEL, uploadResponse.message);
-    return res.status(500).send({
+    ScriptLogging.error(SHOVEL, uploadResponse?.message);
+    res.status(500).send({
       decorator: uploadResponse?.decorator || "UPLOAD_FAILED",
       message: "We ran into an issue while uploading that file",
-      error: uploadResponse.error,
+      error: uploadResponse?.error,
     });
+    return;
   }
 
   const { data } = uploadResponse;
@@ -38,19 +39,21 @@ export const upload = async (req, res) => {
     const response = await Data.createFile({ files: data, owner: user });
 
     if (!response) {
-      return res.status(404).send({
+      res.status(404).send({
         decorator: "CREATE_FILE_FAILED",
         message: "We ran into an error while creating that file",
         error: true,
       });
+      return;
     }
 
     if (response.error) {
-      return res.status(500).send({
+      res.status(500).send({
         decorator: response.decorator,
         message: "We ran into an error while creating that file",
         error: response.error,
       });
+      return;
     }
 
     file = response;

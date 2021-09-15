@@ -1,11 +1,10 @@
 import { uploadByUrl } from "~/node_common/api-core/upload-by-url";
 
 export default async (req, res, options) => {
-  let response = await uploadByUrl(req, res, true);
-  if (!response) {
+  let file = await uploadByUrl(req, res, true);
+  if (!file) {
     return;
   }
-  const { file } = response;
 
   return res.status(200).json({
     decorator: "SERVER_UPLOAD_BY_URL",

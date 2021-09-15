@@ -108,7 +108,7 @@ export async function formMultipart(req, res, { user, bucketName, originalFileNa
 
             ScriptLogging.error(SHOVEL, `${timeoutId} : sendTextileSlackMessage()`);
             Social.sendTextileSlackMessage({
-              file: "/node_common/upload.js",
+              file: "/node_common/upload-zip.js",
               user,
               message: e.message,
               code: e.code,
@@ -282,7 +282,7 @@ export async function formMultipart(req, res, { user, bucketName, originalFileNa
     ScriptLogging.message(POST, `${data.filename} : ${Strings.bytesToSize(data.size)} uploaded`);
   } catch (e) {
     Social.sendTextileSlackMessage({
-      file: "/node_common/upload.js",
+      file: "/node_common/upload-zip.js",
       user,
       message: e.message,
       code: e.code,

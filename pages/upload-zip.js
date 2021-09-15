@@ -33,13 +33,13 @@ export default async (req, res) => {
   }
 
   if (!response) {
-    return res.status(413).json({ decorator: "SERVER_UPLOAD_ERROR", error: true });
+    return res.status(500).json({ decorator: "SERVER_UPLOAD_ERROR", error: true });
   }
 
   if (response.error) {
     // NOTE(jim): To debug potential textile issues with matching CIDs.
     ScriptLogging.error(SHOVEL, e.message);
-    return res.status(413).json({ decorator: response.decorator, error: response.error });
+    return res.status(500).json({ decorator: response.decorator, error: response.error });
   }
 
   const { data } = response;

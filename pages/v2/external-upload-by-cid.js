@@ -3,11 +3,10 @@ import * as Conversions from "~/common/conversions";
 import { uploadByCid } from "~/node_common/api-core/upload-by-cid";
 
 export default async (req, res) => {
-  let response = await uploadByCid(req, res);
-  if (!response) {
+  let file = await uploadByCid(req, res);
+  if (!file) {
     return;
   }
-  const { file } = response;
 
   let reformattedData = Conversions.convertToV2File(file);
 

@@ -3,11 +3,10 @@ import * as Conversions from "~/common/conversions";
 import { uploadByUrl } from "~/node_common/api-core/upload-by-url";
 
 export default async (req, res) => {
-  let response = await uploadByUrl(req, res);
-  if (!response) {
+  let file = await uploadByUrl(req, res);
+  if (!file) {
     return;
   }
-  const { file } = response;
 
   let reformattedData = Conversions.convertToV3File(file);
 
