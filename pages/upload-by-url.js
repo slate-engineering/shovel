@@ -53,11 +53,11 @@ export default async (req, res, options) => {
   }
 
   if (!response) {
-    return res.status(413).json({ decorator: "UPLOAD_ERROR", error: true });
+    return res.status(500).json({ decorator: "UPLOAD_ERROR", error: true });
   }
 
   if (response.error) {
-    return res.status(413).json({ decorator: response.decorator, error: true });
+    return res.status(500).json({ decorator: response.decorator, error: true });
   }
 
   const { data: file } = response;

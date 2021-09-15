@@ -77,12 +77,12 @@ export default async (req, res) => {
   }
 
   if (!uploadResponse) {
-    return res.status(413).send({ decorator: "UPLOAD_FAILED", error: true });
+    return res.status(500).send({ decorator: "UPLOAD_FAILED", error: true });
   }
 
   if (uploadResponse.error) {
     ScriptLogging.error(SHOVEL, uploadResponse.message);
-    return res.status(413).send({
+    return res.status(500).send({
       decorator: uploadResponse.decorator,
       error: uploadResponse.error,
     });

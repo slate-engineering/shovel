@@ -15,6 +15,7 @@ const POST = "POST PROCESS    ";
 const HIGH_WATER_MARK = 1024 * 1024 * 3;
 
 export async function formMultipart(req, res, { user, bucketName, originalFileName }) {
+  console.log({ user });
   const singleConcurrencyQueue = new Queue({ concurrency: 1 });
   const controller = new AbortController();
   const heapSize = Strings.bytesToSize(process.memoryUsage().heapUsed);
