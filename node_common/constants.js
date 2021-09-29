@@ -7,3 +7,9 @@ export const TEXTILE_BUCKET_LIMIT = TEXTILE_ACCOUNT_BYTE_LIMIT - 234;
 // NOTE(jim): 100mb
 export const MIN_ARCHIVE_SIZE_BYTES = 104857600;
 export const IPFS_GATEWAY_URL = "https://slate.textile.io/ipfs";
+
+export const textile = {
+  threadName: "buckets",
+  mainBucket: "data",
+  dealsBucket: "stage-deal",
+};

@@ -36,10 +36,10 @@ export const uploadByUrl = async (req, res, internal = false) => {
     return;
   }
 
-  let { buckets, bucketKey, bucketRoot } = await Utilities.getBucketAPIFromUserToken({ user });
+  let { buckets, bucketKey, bucketRoot } = await Utilities.getBucket({ user });
 
   if (!buckets) {
-    ScriptLogging.error(SHOVEL, `Utilities.getBucketAPIFromUserToken()`);
+    ScriptLogging.error(SHOVEL, `Utilities.getBucket()`);
     res.set("Connection", "close");
     res.status(500).json({
       decorator: "UPLOAD_NO_BUCKETS",
