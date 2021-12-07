@@ -45,6 +45,7 @@ export const convertToV1File = (file) => {
     blurhash: file.blurhash,
     source: file.source,
     body: file.body,
+    public: file.isPublic,
     author: file.author,
     linkName: file.linkName,
     linkBody: file.linkBody,
