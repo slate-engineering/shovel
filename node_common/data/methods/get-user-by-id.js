@@ -15,13 +15,23 @@ export default async ({ id, sanitize = false, includeFiles = false, publicOnly =
       // const userFiles = () =>
       //   DB.raw("json_agg(?? order by ?? desc) as ??", ["files", "files.createdAt", "library"]);
 
-      const userFiles = () =>
-        DB.raw(
-          "coalesce(json_agg(?? order by ?? desc) filter (where ?? is not null), '[]') as ??",
-          ["files", "files.createdAt", "files.id", "library"]
-        );
+      // const userFiles = () =>
+      //   DB.raw(
+      //     "coalesce(json_agg(?? order by ?? desc) filter (where ?? is not null), '[]') as ??",
+      //     ["files", "files.createdAt", "files.id", "library"]
+      //   );
 
       let query;
+
+      if (sanitize) {
+        query = await DB.select(...Serializers.userPublicProperties)
+          .from("users")
+          .where({ id })
+          .first();
+      } else {
+        query = await DB.select("*").from("users").where({ id }).first();
+      }
+
       if (includeFiles) {
         if (publicOnly) {
           //TODO(martina): fix this so can be done in one query. Right now, it's duplicating files for each slate_files entry. Need to do distinct on file.id for the json agg
@@ -41,9 +51,7 @@ export default async ({ id, sanitize = false, includeFiles = false, publicOnly =
           //   .groupBy("users.id")
           //   .first();
 
-          query = await DB.select("*").from("users").where({ id }).first();
-
-          let library = await DB.select(...Constants.fileProperties)
+          let library = await DB.select("files.*")
             .from("files")
             .leftJoin("slate_files", "slate_files.fileId", "=", "files.id")
             .leftJoin("slates", "slate_files.slateId", "=", "slates.id")
@@ -62,19 +70,21 @@ export default async ({ id, sanitize = false, includeFiles = false, publicOnly =
 
           query.library = library;
         } else {
-          query = await DB.select(...Constants.userProperties, userFiles())
-            .from("users")
-            .where({ "users.id": id })
-            .leftJoin("files", "files.ownerId", "users.id")
-            .groupBy("users.id")
-            .first();
-        }
-      } else {
-        query = await DB.select("*").from("users").where({ id }).first();
-      }
+          let library = await DB.select("*")
+            .from("files")
+            .where({ ownerId: id })
+            .orderBy("createdAt", "desc")
+            .groupBy("id");
 
-      if (sanitize) {
-        query = Serializers.sanitizeUser(query);
+          query.library = library;
+
+          // query = await DB.select("users.*", userFiles())
+          // .from("users")
+          // .where({ "users.id": id })
+          // .leftJoin("files", "files.ownerId", "users.id")
+          // .groupBy("users.id")
+          // .first();
+        }
       }
 
       if (!query || query.error) {

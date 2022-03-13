@@ -1,4 +1,5 @@
 import * as Serializers from "~/node_common/serializers";
+
 import { runQuery } from "~/node_common/data/utilities";
 
 //NOTE(toast): should only be used for checking if an email is taken
@@ -7,13 +8,14 @@ export default async ({ twitterId }) => {
   return await runQuery({
     label: "GET_USER_BY_TWITTER_ID",
     queryFn: async (DB) => {
-      let query = await DB.select("*").from("users").where({ twitterId: twitterId }).first();
+      let query = await DB.select(...Serializers.userPublicProperties)
+        .from("users")
+        .where({ twitterId })
+        .first();
 
       if (!query || query.error) {
         return null;
       }
-
-      query = Serializers.sanitizeUser(query);
 
       return JSON.parse(JSON.stringify(query));
     },

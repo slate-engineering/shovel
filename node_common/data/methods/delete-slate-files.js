@@ -1,3 +1,5 @@
+import * as Data from "~/node_common/data";
+
 import { runQuery } from "~/node_common/data/utilities";
 
 export default async ({ slateId, ids }) => {
@@ -7,18 +9,17 @@ export default async ({ slateId, ids }) => {
       const slateFiles = await DB("slate_files")
         .where("slateId", slateId)
         .whereIn("fileId", ids)
-        .del();
+        .del()
+        .returning("*");
 
       const activityQuery = await DB("activity")
         .where({ slateId, type: "CREATE_SLATE_OBJECT" })
         .whereIn("fileId", ids)
         .del();
 
-      const summaryQuery = await DB("slates")
-        .where("id", slateId)
-        .decrement("fileCount", ids.length);
+      await Data.recalcSlateFilecount({ slateId });
 
-      return true;
+      return slateFiles;
     },
     errorFn: async (e) => {
       return {

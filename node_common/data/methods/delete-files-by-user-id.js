@@ -12,12 +12,6 @@ export default async ({ ownerId }) => {
 
       let fileIds = selected.map((file) => file.id);
 
-      //NOTE(martina): so that reposted versions of the file can be displayed as "deleted" rather than just disappearing
-      // const repostedSlateFiles = await DB.from("slate_files")
-      //   .join("slates", "slates.id", "=", "slate_files.slateId")
-      //   .whereNot("slates.ownerId", "=", ownerId)
-      //   .whereIn("slate_files.fileId", fileIds)
-      //   .update({ "slate_files.fileId": null });
       //TODO(martina): send out a notification for this instead
       const repostedSlateFiles = await DB.from("slate_files")
         .whereIn("id", function () {
@@ -34,11 +28,9 @@ export default async ({ ownerId }) => {
 
       const activity = await DB("activity").whereIn("fileId", fileIds).del();
 
-      const likes = await DB("likes").whereIn("fileId", fileIds).del();
+      const files = await DB("files").whereIn("id", fileIds).del().returning("*");
 
-      const files = await DB("files").whereIn("id", fileIds).del();
-
-      return true;
+      return files;
     },
     errorFn: async (e) => {
       return {

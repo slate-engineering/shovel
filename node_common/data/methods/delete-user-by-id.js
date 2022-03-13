@@ -1,3 +1,5 @@
+import * as Data from "~/node_common/data";
+
 import { runQuery } from "~/node_common/data/utilities";
 
 export default async ({ id }) => {
@@ -14,9 +16,9 @@ export default async ({ id }) => {
         .del()
         .returning("slateId");
 
-      const subscriberSummaryQuery = await DB.from("slates")
-        .whereIn("id", deletedSubscriptions)
-        .decrement("subscriberCount", 1);
+      for (let slateId of deletedSubscriptions) {
+        await Data.recalcSlateSubscribercount({ slateId });
+      }
 
       const deletedFollowing = await DB.from("subscriptions")
         .where({ ownerId: id })
@@ -24,9 +26,9 @@ export default async ({ id }) => {
         .del()
         .returning("userId");
 
-      const followingSummaryQuery = await DB.from("users")
-        .whereIn("id", deletedFollowing)
-        .decrement("followerCount", 1);
+      for (let userId of deletedFollowing) {
+        await Data.recalcUserFollowercount({ userId });
+      }
 
       const activity = await DB.from("activity")
         .where({ ownerId: id })
@@ -35,16 +37,11 @@ export default async ({ id }) => {
 
       const usage = await DB.from("usage").where("userId", id).del();
 
-      const likes = await DB.from("likes").where({ userId: id }).del().returning("fileId");
+      const data = await DB.from("users").where({ id }).del().returning("*");
 
-      if (likes) {
-        // const fileIds = likes.map((like) => like.fileId);
-        const summaryQuery = await DB.from("files").whereIn("id", likes).decrement("likeCount", 1);
-      }
+      let user = data ? data.pop() : data;
 
-      const data = await DB.from("users").where({ id }).del();
-
-      return 1 === data;
+      return user;
     },
     errorFn: async (e) => {
       return {

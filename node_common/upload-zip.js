@@ -49,13 +49,13 @@ export async function formMultipart(req, res, { user, bucketName, originalFileNa
     };
   }
 
-  let { buckets, bucketKey, bucketRoot } = await Utilities.getBucketAPIFromUserToken({
+  let { buckets, bucketKey, bucketRoot } = await Utilities.getBucket({
     user,
     bucketName,
   });
 
   if (!buckets) {
-    ScriptLogging.error(SHOVEL, `Utilities.getBucketAPIFromUserToken()`);
+    ScriptLogging.error(SHOVEL, `Utilities.getBucket()`);
     res.set("Connection", "close");
     return {
       decorator: "UPLOAD_NO_BUCKETS",
@@ -108,7 +108,7 @@ export async function formMultipart(req, res, { user, bucketName, originalFileNa
 
             ScriptLogging.error(SHOVEL, `${timeoutId} : sendTextileSlackMessage()`);
             Social.sendTextileSlackMessage({
-              file: "/node_common/upload.js",
+              file: "/node_common/upload-zip.js",
               user,
               message: e.message,
               code: e.code,
@@ -249,14 +249,14 @@ export async function formMultipart(req, res, { user, bucketName, originalFileNa
     return response;
   }
 
-  ScriptLogging.message(POST, `non-essential Utilities.getBucketAPIFromuserToken()`);
-  let refreshed = await Utilities.getBucketAPIFromUserToken({
+  ScriptLogging.message(POST, `non-essential Utilities.getBucket()`);
+  let refreshed = await Utilities.getBucket({
     user,
     bucketName,
   });
 
   if (!refreshed.buckets) {
-    ScriptLogging.error(POST, `Utilities.getBucketAPIFromuserToken() failed`);
+    ScriptLogging.error(POST, `Utilities.getBucket() failed`);
     return {
       decorator: "UPLOAD_FAILURE",
       error: true,
@@ -267,23 +267,22 @@ export async function formMultipart(req, res, { user, bucketName, originalFileNa
 
   try {
     const newUpload = await refreshed.buckets.listIpfsPath(response.data);
-    data.data.size = newUpload.size;
+    data.size = newUpload.size;
     if (unityGameConfig || unityGameLoader) {
-      data.data.unity = {
-        config: unityGameConfig,
-        loader: unityGameLoader,
+      data.data = {
+        unity: {
+          config: unityGameConfig,
+          loader: unityGameLoader,
+        },
       };
     }
 
     gameRootUrl = newUpload.cid;
 
-    ScriptLogging.message(
-      POST,
-      `${data.filename} : ${Strings.bytesToSize(data.data.size)} uploaded`
-    );
+    ScriptLogging.message(POST, `${data.filename} : ${Strings.bytesToSize(data.size)} uploaded`);
   } catch (e) {
     Social.sendTextileSlackMessage({
-      file: "/node_common/upload.js",
+      file: "/node_common/upload-zip.js",
       user,
       message: e.message,
       code: e.code,

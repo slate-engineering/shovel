@@ -4,9 +4,9 @@ export default async ({ sid }) => {
   return await runQuery({
     label: "DELETE_VERIFICATION_BY_SID",
     queryFn: async (DB) => {
-      const query = await DB.from("verifications").where({ sid }).del();
+      const data = await DB.from("verifications").where({ sid }).del().returning("*");
 
-      return 1 === query;
+      return data;
     },
     errorFn: async (e) => {
       return {

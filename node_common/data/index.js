@@ -5,8 +5,18 @@ import updateUserById from "~/node_common/data/methods/update-user-by-id";
 import deleteUserById from "~/node_common/data/methods/delete-user-by-id";
 import getUserByUsername from "~/node_common/data/methods/get-user-by-username";
 import getUserById from "~/node_common/data/methods/get-user-by-id";
+import getUserByEmail from "~/node_common/data/methods/get-user-by-email";
+import getUserByTwitterId from "~/node_common/data/methods/get-user-by-twitter-id";
+import recalcUserSlatecount from "~/node_common/data/methods/recalc-user-slatecount";
+import recalcUserFollowercount from "~/node_common/data/methods/recalc-user-followercount";
 
-//NOTE(martina):
+// NOTE(amine)
+// TwitterTokens postgres queries
+import createTwitterToken from "~/node_common/data/methods/create-twitter-token";
+import getTwitterToken from "~/node_common/data/methods/get-twitter-token";
+import updateTwitterToken from "~/node_common/data/methods/update-twitter-token";
+
+// NOTE(martina):
 // File postgres queries
 import createFile from "~/node_common/data/methods/create-file";
 import getFileByCid from "~/node_common/data/methods/get-file-by-cid";
@@ -17,7 +27,8 @@ import getFilesByUserId from "~/node_common/data/methods/get-files-by-user-id";
 import deleteFilesByIds from "~/node_common/data/methods/delete-files-by-ids";
 import deleteFilesByUserId from "~/node_common/data/methods/delete-files-by-user-id";
 import updateFileById from "~/node_common/data/methods/update-file-by-id";
-import updateFilePrivacy from "~/node_common/data/methods/update-file-privacy";
+import incrementFileSavecount from "~/node_common/data/methods/increment-file-savecount";
+import recalcFilePrivacy from "~/node_common/data/methods/recalc-file-privacy";
 
 //NOTE(martina):
 // Slate file postgres queries
@@ -36,6 +47,8 @@ import updateSlateById from "~/node_common/data/methods/update-slate-by-id";
 import updateSlatePrivacy from "~/node_common/data/methods/update-slate-privacy";
 import deleteSlatesByUserId from "~/node_common/data/methods/delete-slates-by-user-id";
 import deleteSlateById from "~/node_common/data/methods/delete-slate-by-id";
+import recalcSlateSubscribercount from "~/node_common/data/methods/recalc-slate-subscribercount";
+import recalcSlateFilecount from "~/node_common/data/methods/recalc-slate-filecount";
 
 // NOTE(jim):
 // API postgres queries
@@ -57,6 +70,8 @@ import deleteSubscriptionById from "~/node_common/data/methods/delete-subscripti
 
 // NOTE(jim):
 // Activity postgres queries
+import createUsageStat from "~/node_common/data/methods/create-usage-stat";
+import createDownload from "~/node_common/data/methods/create-download";
 import createActivity from "~/node_common/data/methods/create-activity";
 import getActivity from "~/node_common/data/methods/get-activity";
 import getExplore from "~/node_common/data/methods/get-explore";
@@ -67,19 +82,35 @@ import getEverySlate from "~/node_common/data/methods/get-every-slate";
 import getEveryUser from "~/node_common/data/methods/get-every-user";
 import getEveryFile from "~/node_common/data/methods/get-every-file";
 
+// NOTE(toast):
+// Verification sessions for email verif
+import createVerification from "~/node_common/data/methods/create-verification";
+import updateVerification from "~/node_common/data/methods/update-verification";
+import deleteVerificationByEmail from "~/node_common/data/methods/delete-verification-by-email";
+import deleteVerificationBySid from "~/node_common/data/methods/delete-verification-by-sid";
+import getVerificationByEmail from "~/node_common/data/methods/get-verification-by-email";
+import getVerificationBySid from "~/node_common/data/methods/get-verification-by-sid";
+import pruneVerifications from "~/node_common/data/methods/prune-verifications";
+
 // NOTE(jim):
 // one-offs
 import createOrphan from "~/node_common/data/methods/create-orphan";
+import getAllSendgridContacts from "~/node_common/data/methods/get-all-sendgrid-contacts";
 
 export {
   // NOTE(jim): One-offs
   createOrphan,
+  getAllSendgridContacts,
   // NOTE(jim): User operations
   createUser,
   updateUserById,
   deleteUserById,
   getUserByUsername,
   getUserById,
+  getUserByEmail,
+  getUserByTwitterId,
+  recalcUserSlatecount,
+  recalcUserFollowercount,
   //NOTE(martina): File operations
   createFile,
   getFileByCid,
@@ -90,8 +121,9 @@ export {
   deleteFilesByIds,
   deleteFilesByUserId,
   updateFileById,
-  updateFilePrivacy,
-  //NOTE(martina): Slate file operations
+  incrementFileSavecount,
+  recalcFilePrivacy,
+  // NOTE(martina): Slate file operations
   createSlateFiles,
   deleteSlateFiles,
   getSlateFilesByCids,
@@ -105,6 +137,8 @@ export {
   updateSlatePrivacy,
   deleteSlatesByUserId,
   deleteSlateById,
+  recalcSlateFilecount,
+  recalcSlateSubscribercount,
   // NOTE(jim): API key operations
   createAPIKey,
   deleteAPIKeyById,
@@ -120,6 +154,8 @@ export {
   getFollowingByUserId,
   deleteSubscriptionById,
   // NOTE(jim): Activity operations
+  createUsageStat,
+  createDownload,
   createActivity,
   getActivity,
   getExplore,
@@ -127,4 +163,16 @@ export {
   getEverySlate,
   getEveryUser,
   getEveryFile,
+  //NOTE(toast): Verification operations
+  createVerification,
+  getVerificationByEmail,
+  getVerificationBySid,
+  deleteVerificationByEmail,
+  deleteVerificationBySid,
+  pruneVerifications,
+  updateVerification,
+  // NOTE(amine): Twitter
+  createTwitterToken,
+  getTwitterToken,
+  updateTwitterToken,
 };

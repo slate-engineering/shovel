@@ -15,14 +15,11 @@ export default async ({ owner, files, saveCopy = false }) => {
     return file;
   });
 
-  const cleanedFiles = inputFiles.map((file) => Serializers.cleanFile(file));
-
   return await runQuery({
     label: "CREATE_FILE",
     queryFn: async (DB) => {
-      let query = await DB.insert(cleanedFiles).into("files").returning("*");
+      let query = await DB.insert(inputFiles).into("files").returning("*");
 
-      let publicCount = 0;
       let activityItems = [];
       if (query) {
         for (let file of query) {
@@ -32,7 +29,6 @@ export default async ({ owner, files, saveCopy = false }) => {
               fileId: file.id,
               type: saveCopy ? "SAVE_COPY" : "CREATE_FILE",
             });
-            publicCount += 1;
           } else {
             activityItems.push({
               ownerId: owner.id,

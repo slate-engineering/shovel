@@ -4,9 +4,9 @@ export default async ({ email }) => {
   return await runQuery({
     label: "DELETE_VERIFICATION_BY_EMAIL",
     queryFn: async (DB) => {
-      const query = await DB.from("verifications").where({ email }).del();
+      const data = await DB.from("verifications").where({ email }).del().returning("*");
 
-      return 1 === query;
+      return data;
     },
     errorFn: async (e) => {
       return {

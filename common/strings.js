@@ -23,6 +23,10 @@ export const isEmpty = (string) => {
   return !string.trim();
 };
 
+export const ipfsToCid = (ipfs) => {
+  return ipfs.replace("/ipfs/", "");
+};
+
 export const bytesToSize = (bytes, decimals = 2) => {
   if (bytes === 0) return "0 Bytes";
 

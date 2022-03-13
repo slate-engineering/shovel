@@ -7,12 +7,16 @@ import APIRouteUploadExternalV1 from "~/pages/v1/external-upload";
 import APIRouteSlateUploadExternalV1 from "~/pages/v1/external-slate-upload";
 import APIRouteUploadExternalV2 from "~/pages/v2/external-upload";
 import APIRouteSlateUploadExternalV2 from "~/pages/v2/external-slate-upload";
+import APIRouteUploadExternalV3 from "~/pages/v3/external-upload";
+import APIRouteSlateUploadExternalV3 from "~/pages/v3/external-slate-upload";
 import APIRouteUploadZip from "~/pages/upload-zip";
 import APICreateZipToken from "~/pages/create-zip-token";
 import APIDownloadByToken from "~/pages/download-by-token";
 import APIRouteUploadUrl from "~/pages/upload-by-url";
 import APIRouteUploadCidExternalV2 from "~/pages/v2/external-upload-by-cid";
 import APIRouteUploadUrlExternalV2 from "~/pages/v2/external-upload-by-url";
+import APIRouteUploadCidExternalV3 from "~/pages/v3/external-upload-by-cid";
+import APIRouteUploadUrlExternalV3 from "~/pages/v3/external-upload-by-url";
 
 import express from "express";
 import cors from "cors";
@@ -43,6 +47,8 @@ server.post("/api/public/:slate", async (req, res) => {
   return await APIRouteSlateUploadExternalV1(req, res);
 });
 
+/* v2 endpoints */
+
 server.post("/api/v2/public", async (req, res) => {
   req.setTimeout(0);
 
@@ -65,6 +71,32 @@ server.post("/api/v2/public/:slate", async (req, res) => {
   req.setTimeout(0);
 
   return await APIRouteSlateUploadExternalV2(req, res);
+});
+
+/* v3 endpoints */
+
+server.post("/api/v3/public", async (req, res) => {
+  req.setTimeout(0);
+
+  return await APIRouteUploadExternalV3(req, res);
+});
+
+server.post("/api/v3/public/upload-by-cid", async (req, res) => {
+  req.setTimeout(0);
+
+  return await APIRouteUploadCidExternalV3(req, res);
+});
+
+server.post("/api/v3/public/upload-by-url", async (req, res) => {
+  req.setTimeout(0);
+
+  return await APIRouteUploadUrlExternalV3(req, res);
+});
+
+server.post("/api/v3/public/:slate", async (req, res) => {
+  req.setTimeout(0);
+
+  return await APIRouteSlateUploadExternalV3(req, res);
 });
 
 server.post("/api/data/url", async (req, res) => {

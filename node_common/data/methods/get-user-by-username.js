@@ -7,18 +7,26 @@ export default async ({ username, sanitize = false, includeFiles = false, public
   return await runQuery({
     label: "GET_USER_BY_USERNAME",
     queryFn: async (DB) => {
-      // const userFiles = () =>
-      //   DB.raw("json_agg(?? order by ?? desc) as ??", ["files", "files.createdAt", "library"]);
-
-      const userFiles = () =>
-        DB.raw(
-          "coalesce(json_agg(?? order by ?? desc) filter (where ?? is not null), '[]') as ??",
-          ["files", "files.createdAt", "files.id", "library"]
-        );
-
       let query;
+
+      if (sanitize) {
+        query = await DB.select(...Serializers.userPublicProperties)
+          .from("users")
+          .where({ username })
+          .first();
+      } else {
+        query = await DB.select("*").from("users").where({ username }).first();
+      }
+
+      const id = query?.id;
+
+      if (!id) {
+        return null;
+      }
+
       if (includeFiles) {
         if (publicOnly) {
+          //TODO(martina): fix this so can be done in one query. Right now, it's duplicating files for each slate_files entry. Need to do distinct on file.id for the json agg
           // query = await DB.select(
           //   "users.id",
           //   "users.username",
@@ -30,80 +38,49 @@ export default async ({ username, sanitize = false, includeFiles = false, public
           //   .join("files", "files.ownerId", "users.id")
           //   .join("slate_files", "files.id", "=", "slate_files.fileId")
           //   .join("slates", "slates.id", "=", "slate_files.slateId")
-          //   .where({ "users.username": username, "files.isPublic": true })
-          //   .orWhere({ "users.username": username, "slates.isPublic": true })
-          //   .groupBy("users.id");
-          // .first();
-
-          // let subquery = () =>
-          //   DB.select(
-          //     "files.id",
-          //     "files.ownerId",
-          //     "files.cid",
-          //     "files.isPublic",
-          //     "files.filename",
-          //     "files.data"
-          //   )
-          //     .from("files")
-          //     .join("slate_files", "files.id", "=", "slate_files.fileId")
-          //     .join("slates", "slates.id", "=", "slate_files.slateId")
-          //     .where({ "files.isPublic": true })
-          //     .orWhere({ "slates.isPublic": true })
-          //     .as("files");
-
-          // query = await DB.select(
-          //   "users.id",
-          //   "users.username",
-          //   "users.data",
-          //   "users.email",
-          //   userFiles()
-          // )
-          //   .from("users")
-          //   .join(subquery(), "publicFiles.ownerId", "=", "users.id")
-          //   .where({ "users.username": username })
+          //   .where({ "users.id": id, "files.isPublic": true })
+          //   .orWhere({ "users.id": id, "slates.isPublic": true })
           //   .groupBy("users.id")
           //   .first();
-          query = await DB.select("*").from("users").where({ username }).first();
 
-          const id = query?.id;
+          let library = await DB.select("files.*")
+            .from("files")
+            .leftJoin("slate_files", "slate_files.fileId", "=", "files.id")
+            .leftJoin("slates", "slate_files.slateId", "=", "slates.id")
+            .whereRaw("?? = ? and (?? = ? or ?? = ?)", [
+              "files.ownerId",
+              id,
+              "files.isPublic",
+              true,
+              "slates.isPublic",
+              true,
+            ])
+            // .where({ "files.ownerId": id, "slates.isPublic": true })
+            // .orWhere({ "files.ownerId": id, "files.isPublic": true })
+            .orderBy("files.createdAt", "desc")
+            .groupBy("files.id");
 
-          if (id) {
-            let library = await DB.select(...Constants.fileProperties)
-              .from("files")
-              .leftJoin("slate_files", "slate_files.fileId", "=", "files.id")
-              .leftJoin("slates", "slate_files.slateId", "=", "slates.id")
-              // .where({ "files.ownerId": id, "slates.isPublic": true })
-              // .orWhere({ "files.ownerId": id, "files.isPublic": true })
-              .whereRaw("?? = ? and (?? = ? or ?? = ?)", [
-                "files.ownerId",
-                id,
-                "files.isPublic",
-                true,
-                "slates.isPublic",
-                true,
-              ])
-              .orderBy("files.createdAt", "desc")
-              .groupBy("files.id");
-
-            query.library = library;
-          }
+          query.library = library;
         } else {
-          query = await DB.select(...Constants.userProperties, userFiles())
-            .from("users")
-            .where({ "users.username": username })
-            .leftJoin("files", "files.ownerId", "users.id")
-            .first();
+          let library = await DB.select("*")
+            .from("files")
+            .where({ ownerId: id })
+            .orderBy("createdAt", "desc")
+            .groupBy("id");
+
+          query.library = library;
+
+          // query = await DB.select("users.*", userFiles())
+          // .from("users")
+          // .where({ "users.id": id })
+          // .leftJoin("files", "files.ownerId", "users.id")
+          // .groupBy("users.id")
+          // .first();
         }
-      } else {
-        query = await DB.select("*").from("users").where({ username }).first();
       }
 
       if (!query || query.error) {
         return null;
-      }
-
-      if (sanitize) {
-        query = Serializers.sanitizeUser(query);
       }
 
       return JSON.parse(JSON.stringify(query));

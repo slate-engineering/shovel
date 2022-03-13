@@ -7,11 +7,9 @@ export const createLocalDataIncomplete = ({ type, size, name = "" }, id = null) 
     id: fileId,
     filename: filename,
     createdAt: new Date(),
-    data: {
-      name: filename,
-      type: type,
-      size: size,
-    },
+    name: filename,
+    type,
+    size,
   };
 };
 

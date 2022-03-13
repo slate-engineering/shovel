@@ -1,3 +1,5 @@
+import * as Data from "~/node_common/data";
+
 import { runQuery } from "~/node_common/data/utilities";
 
 export default async ({ id }) => {
@@ -10,18 +12,14 @@ export default async ({ id }) => {
 
       const activity = await DB("activity").where({ slateId: id }).del();
 
-      const slates = await DB("slates").where({ id }).del().returning("*");
+      const data = await DB("slates").where({ id }).del().returning("*");
 
-      if (slates) {
-        const slate = slates.pop();
-        if (slate.isPublic) {
-          const summaryQuery = await DB.from("users")
-            .where("id", slate.ownerId)
-            .decrement("slateCount", 1);
-        }
+      let slate = data ? data.pop() : data;
+      if (slate?.isPublic) {
+        await Data.recalcUserSlatecount({ userId: slate.ownerId });
       }
 
-      return slates;
+      return slate;
     },
     errorFn: async (e) => {
       return {

@@ -2,7 +2,7 @@ import * as Strings from "~/common/strings";
 
 const USERNAME_REGEX = new RegExp("^[a-zA-Z0-9_]{0,}[a-zA-Z]+[0-9]*$");
 const MIN_PASSWORD_LENGTH = 8;
-const EMAIL_REGEX = /^[\w.!#$%&'*+\/=?^_`{|}~-]+@[a-zA-Z0-9_]+?\.[a-zA-Z]{2,50}$/;
+const EMAIL_REGEX = /^[\w.!#$%&'*+\/=?^_`{|}~-]+@[-a-zA-Z0-9_.]+?\.[a-zA-Z]{2,50}$/;
 const CONTAINS_DIGIT_REGEX = /\d/;
 const CONTAINS_UPPERCASE_REGEX = /[A-Z]/;
 const CONTAINS_LOWERCASE_REGEX = /[a-z]/;
@@ -219,10 +219,6 @@ export const isPreviewableImage = (type = "") => {
   return type.startsWith("image/");
 };
 
-export const isLinkType = (type = "") => {
-  return type === "link";
-};
-
 export const isImageType = (type = "") => {
   return type.startsWith("image/");
 };
@@ -245,6 +241,17 @@ export const isEpubType = (type = "") => {
 
 export const isUnityType = (type = "") => {
   return type === "application/unity";
+};
+
+export const is3dFile = (filename = "") => {
+  return endsWithAny(
+    [".stl", ".obj", ".fbx", ".blend", ".c4d", ".glb", ".dae", ".3ds", ".wrl"],
+    filename.toLowerCase()
+  );
+};
+
+export const isCodeFile = (filename = "") => {
+  return endsWithAny([".js"], filename.toLowerCase());
 };
 
 export const isFontFile = (fileName = "") => {

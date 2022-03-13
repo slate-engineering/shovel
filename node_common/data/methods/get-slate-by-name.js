@@ -1,9 +1,6 @@
-import * as Serializers from "~/node_common/serializers";
-import * as Constants from "~/node_common/constants";
-
 import { runQuery } from "~/node_common/data/utilities";
 
-export default async ({ slatename, ownerId, username, sanitize = false, includeFiles = false }) => {
+export default async ({ slatename, ownerId, username, includeFiles = false }) => {
   return await runQuery({
     label: "GET_SLATE_BY_NAME",
     queryFn: async (DB) => {
@@ -32,7 +29,7 @@ export default async ({ slatename, ownerId, username, sanitize = false, includeF
       let query;
 
       if (includeFiles) {
-        query = await DB.select(...Constants.slateProperties, slateFiles())
+        query = await DB.select("slates.*", slateFiles())
           .from("slates")
           .leftJoin("slate_files", "slate_files.slateId", "=", "slates.id")
           .leftJoin("files", "slate_files.fileId", "=", "files.id")
@@ -40,18 +37,11 @@ export default async ({ slatename, ownerId, username, sanitize = false, includeF
           .groupBy("slates.id")
           .first();
       } else {
-        query = await DB.select(...Constants.slateProperties)
-          .from("slates")
-          .where({ slatename, ownerId: id })
-          .first();
+        query = await DB.select("*").from("slates").where({ slatename, ownerId: id }).first();
       }
 
       if (!query || query.error) {
         return null;
-      }
-
-      if (sanitize) {
-        query = Serializers.sanitizeSlate(query);
       }
 
       return JSON.parse(JSON.stringify(query));
