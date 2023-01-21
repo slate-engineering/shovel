@@ -1,3 +1,3 @@
 export const gateways = {
-  ipfs: "https://slate.textile.io/ipfs",
+  ipfs: "https://api.estuary.tech/gw/ipfs",
 };
