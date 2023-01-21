@@ -1,10 +1,8 @@
 import * as Data from "~/node_common/data";
-import * as Constants from "~/node_common/constants";
 import * as LibraryManager from "~/node_common/managers/library";
 import * as Strings from "~/common/strings";
 import * as ScriptLogging from "~/node_common/script-logging";
 import * as RequestUtilities from "~/node_common/request-utilities";
-import * as Utilities from "~/node_common/utilities";
 
 import AbortController from "abort-controller";
 import fetch from "node-fetch";
@@ -15,7 +13,7 @@ const SHOVEL = "RENDER->TEXTILE ";
 export const uploadByCid = async (req, res) => {
   const userInfo = await RequestUtilities.checkAuthorizationExternal(req, res);
   if (!userInfo) return;
-  const { id, key, user } = userInfo;
+  const { user } = userInfo;
 
   const cid = req.body.data?.cid;
   const filename = req.body.data?.filename;
@@ -31,19 +29,6 @@ export const uploadByCid = async (req, res) => {
   const duplicateFile = await Data.getFileByCid({ ownerId: user.id, cid });
   if (duplicateFile) {
     return duplicateFile;
-  }
-
-  let { buckets, bucketKey, bucketRoot } = await Utilities.getBucket({ user });
-
-  if (!buckets) {
-    ScriptLogging.error(SHOVEL, `Utilities.getBucket()`);
-    res.set("Connection", "close");
-    res.status(500).json({
-      decorator: "UPLOAD_NO_BUCKETS",
-      error: true,
-      message: `No buckets for ${user.username}.`,
-    });
-    return;
   }
 
   const url = Strings.getURLfromCID(cid);
@@ -75,18 +60,6 @@ export const uploadByCid = async (req, res) => {
     }
     ScriptLogging.message(SHOVEL, `${location} was deleted`);
   });
-
-  let response = await Utilities.addExistingCIDToData({
-    buckets,
-    key: bucketKey,
-    path: bucketRoot.path,
-    cid,
-  });
-
-  if (!response) {
-    res.status(400).send({ decorator: "ERROR_WHILE_SAVING_FILE", error: true });
-    return;
-  }
 
   const createResponse = await Data.createFile({ owner: user, files: data });
 
