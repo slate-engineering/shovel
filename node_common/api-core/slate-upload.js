@@ -9,6 +9,12 @@ import * as Utilities from "~/node_common/utilities";
 const SHOVEL = "RENDER->TEXTILE ";
 
 export const slateUpload = async (req, res) => {
+  return res.status(500).send({
+    decorator: "UPLOAD_FAILED",
+    message: "We ran into an issue while uploading that file",
+    error: uploadResponse?.error,
+  });
+
   const userInfo = await RequestUtilities.checkAuthorizationExternal(req, res);
   if (!userInfo) return;
   const { id, key, user } = userInfo;

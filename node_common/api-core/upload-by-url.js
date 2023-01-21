@@ -16,6 +16,12 @@ const POST = "POST PROCESS    ";
 const HIGH_WATER_MARK = 1024 * 1024 * 3;
 
 export const uploadByUrl = async (req, res, internal = false) => {
+  return res.status(500).send({
+    decorator: "UPLOAD_FAILED",
+    message: "We ran into an issue while uploading that file",
+    error: uploadResponse?.error,
+  });
+
   let userInfo;
   if (internal) {
     userInfo = await RequestUtilities.checkAuthorizationInternal(req, res);
